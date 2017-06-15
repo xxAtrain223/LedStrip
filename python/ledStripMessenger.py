@@ -1,6 +1,5 @@
-from LocalPyCmdMessenger import CmdMessenger
+from PyCmdMessenger import CmdMessenger
 from PyCmdMessenger import ArduinoBoard
-from asyncio import Lock
 
 from enum import Enum
 import dis
@@ -49,7 +48,6 @@ class LedStripComm(object):
                          ["kSetBrightness", "?b"],
                          ["kSetPixel", "?bbbb"],
                          ["kFillSolid", "?bbb"],
-                         ["kSetDeltaHue", "?b"],
                          ["kClearEeprom", "?"],
                          ["kIsEepromReady", "?"],
                          ["kIsEepromReadyResult", "?"],
@@ -154,7 +152,6 @@ class LedStripComm(object):
                     argval = int(argval)    
 
                 rv.append(PythonOpcode[i.opname].value - 1)
-                #rv.append(i.opname)
                 rv.append(argval)
 
             if len(rv) > 16:
@@ -243,13 +240,13 @@ class LedStripComm(object):
 with LedStripComm("COM6") as comm:
     comm.ping()
     
-    op = 6
+    op = 5
     if op == 0:
-        #comm.isEepromReady()
+        comm.isEepromReady()
         comm.clearEeprom()
-        #comm.isEepromReady()
+        comm.isEepromReady()
         comm.resetEeprom()
-        #comm.isEepromReady()
+        comm.isEepromReady()
     
     elif op == 1:
         comm.uploadPattern(
