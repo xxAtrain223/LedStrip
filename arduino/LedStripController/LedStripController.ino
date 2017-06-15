@@ -2,6 +2,7 @@
 
 #include <CmdMessenger.h>
 #include <FastLED.h>
+#include <avr/wdt.h>
 
 #include "PythonInterpreter.h"
 
@@ -332,7 +333,13 @@ void cmdJumpToDfu()
     if (requested_ack)
         cmdMessenger.sendBinCmd(kAcknowledge, kJumpToDfu);
     
-    //TODO: Jump To DFU
+    
+	TIMSK0 = 0;
+	TCCR0B = 0;
+	cli();
+	MCUSR |= (1 << WDRF);
+	wdt_enable(WDTO_15MS);
+	while(1) {}
 }
 #pragma endregion
 
