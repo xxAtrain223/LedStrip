@@ -19,27 +19,22 @@ namespace LedStripMessenger
 {
     // This is the list of recognized commands. These can be commands that can either be sent or received. 
     // In order to receive, attach a callback function to these events
-    enum Command
+    enum LedStripCommands
     {
-        RequestPlainTextFloatSeries, // Command Request to send series in plain text
-        ReceivePlainTextFloatSeries, // Command to send an item in plain text
-        RequestBinaryFloatSeries, // Command Request to send series in binary form
-        ReceiveBinaryFloatSeries, // Command to send an item in binary form
+        Ping,
+        Pong,
+        Unknown,
+        Acknowledge,
+        Error,
+        SetPixel,
+        FillSolid,
     };
 
     public class LedStripMessenger
     {
         public bool RunLoop { get; set; }
-        private SerialTransport _serialTransport;
-        private CmdMessenger _cmdMessenger;
-        private int _receivedItemsCount;                        // Counter of number of plain text items received
-        private int _receivedBytesCount;                        // Counter of number of plain text bytes received
-        long _beginTime;                                        // Start time, 1st item of sequence received 
-        long _endTime;                                          // End time, last item of sequence received 
-        private bool _receivePlainTextFloatSeriesFinished;      // Indicates if plain text float series has been fully received
-        private bool _receiveBinaryFloatSeriesFinished;         // Indicates if binary float series has been fully received
-        const int SeriesLength = 2000;                          // Number of items we like to receive from the Arduino
-        private const float SeriesBase = 1111111.111111F;       // Base of values to return: SeriesBase * (0..SeriesLength-1)
+        private SerialTransport serialTransport;
+        private CmdMessenger cmdMessenger;
 
         // ------------------ M A I N  ----------------------
 
@@ -47,63 +42,64 @@ namespace LedStripMessenger
         public void Setup()
         {
             // Create Serial Port object
-            _serialTransport = new SerialTransport
+            serialTransport = new SerialTransport
             {
-                CurrentSerialSettings = { PortName = "COM6", BaudRate = 115200 } // object initializer
+                CurrentSerialSettings = { PortName = "COM6", BaudRate = 9600 } // object initializer
             };
 
             // Initialize the command messenger with the Serial Port transport layer
             // Set if it is communicating with a 16- or 32-bit Arduino board
-            _cmdMessenger = new CmdMessenger(_serialTransport, BoardType.Bit16);
+            cmdMessenger = new CmdMessenger(serialTransport, BoardType.Bit16);
 
             // Attach the callbacks to the Command Messenger
             AttachCommandCallBacks();
 
             // Start listening
-            _cmdMessenger.Connect();
-
-            _receivedItemsCount = 0;
-            _receivedBytesCount = 0;
-
+            cmdMessenger.Connect();
+            
             // Clear queues 
-            _cmdMessenger.ClearReceiveQueue();
-            _cmdMessenger.ClearSendQueue();
+            cmdMessenger.ClearReceiveQueue();
+            cmdMessenger.ClearSendQueue();
+            
+            var pingCommand = new SendCommand((int)LedStripCommands.Ping);
+            cmdMessenger.SendCommand(pingCommand);
+            //cmdMessenger.SendCommand(pingCommand);
 
-            Thread.Sleep(100);
+            Thread.Sleep(2000);
 
-            // Send command requesting a series of 100 float values send in plain text form
-            var commandPlainText = new SendCommand((int)Command.RequestPlainTextFloatSeries);
-            commandPlainText.AddArgument((UInt16)SeriesLength);
-            commandPlainText.AddArgument((float)SeriesBase);
-            // Send command 
-            _cmdMessenger.SendCommand(commandPlainText);
-
-            // Now wait until all values have arrived
-            while (!_receivePlainTextFloatSeriesFinished)
+            for (byte j = 0; j < 10; j++)
             {
-                Thread.Sleep(100);
+                double avgTime = 0;
+                for (byte i = 0; i < 60; i++)
+                {
+                    DateTime t1 = DateTime.Now;
+                    /*
+                    var fillSolid = new SendCommand((int)LedStripCommands.FillSolid);
+                    fillSolid.AddBinArgument(false);
+                    fillSolid.AddBinArgument(i);
+                    fillSolid.AddBinArgument(i);
+                    fillSolid.AddBinArgument(i);
+                    fillSolid.ReqAc = true;
+                    cmdMessenger.SendCommand(fillSolid);
+                    */
+                    var setPixel = new SendCommand((int)LedStripCommands.SetPixel);
+                    setPixel.AddBinArgument(false);
+                    setPixel.AddBinArgument(i);
+                    setPixel.AddBinArgument((byte)(255 / 10 * j));
+                    setPixel.AddBinArgument((byte)(255 / 10 * j));
+                    setPixel.AddBinArgument((byte)(255 / 10 * j));
+                    setPixel.ReqAc = false;
+                    cmdMessenger.SendCommandSync(setPixel, SendQueue.WaitForEmptyQueue);
+                    //cmdMessenger.SendCommand(setPixel);
+                    
+                    Thread.Sleep(10);
+                    DateTime t2 = DateTime.Now;
+                    avgTime += (t2 - t1).TotalMilliseconds;
+                }
+                Console.WriteLine(avgTime / 60.0);
             }
-
-
-            // Clear queues 
-            _cmdMessenger.ClearReceiveQueue();
-            _cmdMessenger.ClearSendQueue();
-
-            _receivedItemsCount = 0;
-            _receivedBytesCount = 0;
-            // Send command requesting a series of 100 float values send in binary form
-            var commandBinary = new SendCommand((int)Command.RequestBinaryFloatSeries);
-            commandBinary.AddBinArgument((UInt16)SeriesLength);
-            commandBinary.AddBinArgument((float)SeriesBase);
-
-            // Send command 
-            _cmdMessenger.SendCommand(commandBinary);
-
-            // Now wait until all values have arrived
-            while (!_receiveBinaryFloatSeriesFinished)
-            {
-                Thread.Sleep(100);
-            }
+            
+            Thread.Sleep(1000);
         }
 
         // Loop function
@@ -116,13 +112,13 @@ namespace LedStripMessenger
         public void Exit()
         {
             // Stop listening
-            _cmdMessenger.Disconnect();
+            cmdMessenger.Disconnect();
 
             // Dispose Command Messenger
-            _cmdMessenger.Dispose();
+            cmdMessenger.Dispose();
 
             // Dispose Serial Port object
-            _serialTransport.Dispose();
+            serialTransport.Dispose();
 
             // Pause before stop
             Console.WriteLine("Press any key to stop...");
@@ -132,115 +128,56 @@ namespace LedStripMessenger
         /// Attach command call backs. 
         private void AttachCommandCallBacks()
         {
-            _cmdMessenger.Attach(OnUnknownCommand);
-            _cmdMessenger.Attach((int)Command.ReceivePlainTextFloatSeries, OnReceivePlainTextFloatSeries);
-            _cmdMessenger.Attach((int)Command.ReceiveBinaryFloatSeries, OnReceiveBinaryFloatSeries);
+            cmdMessenger.Attach(OnUnknown);
+            cmdMessenger.Attach((int)LedStripCommands.Unknown, OnUnknown);
+            cmdMessenger.Attach((int)LedStripCommands.Acknowledge, OnAcknowledge);
+            cmdMessenger.Attach((int)LedStripCommands.Error, OnError);
+            cmdMessenger.Attach((int)LedStripCommands.Pong, OnPong);
         }
-
+        
         // ------------------  C A L L B A C K S ---------------------
-
-        // Called when a received command has no attached function.
-        void OnUnknownCommand(ReceivedCommand arguments)
+        private void OnUnknown(ReceivedCommand arguments)
         {
-            Console.WriteLine("Command without attached callback received");
+            if (arguments.Available())
+            {
+                var unknownCommand = (LedStripCommands)arguments.ReadBinInt16Arg();
+                Console.WriteLine(String.Format("The command \"{0}\"({1}) was unknown to the arduino.", unknownCommand.ToString(), (int)unknownCommand));
+            }
+            else
+            {
+                Console.WriteLine("Command without attached callback received.");
+            }
         }
 
-
-        // Callback function To receive the plain text float series from the Arduino
-        void OnReceivePlainTextFloatSeries(ReceivedCommand arguments)
+        private void OnAcknowledge(ReceivedCommand receivedCommand)
         {
-            _receivedBytesCount += CountBytesInCommand(arguments, true);
-
-            var count = arguments.ReadInt16Arg();
-            var receivedValue = arguments.ReadFloatArg();
-
-
-            if (count != _receivedItemsCount)
-            {
-                Console.WriteLine("Values not matching: received {0} expected {1}", count, _receivedItemsCount);
-            }
-            if (_receivedItemsCount % (SeriesLength / 10) == 0)
-                Console.WriteLine("Received value: {0}", receivedValue);
-            if (_receivedItemsCount == 0)
-            {
-                // Received first value, start stopwatch
-                _beginTime = Millis;
-            }
-            else if (count == SeriesLength - 1)
-            {
-                // Received all values, stop stopwatch
-                _endTime = Millis;
-                var deltaTime = (_endTime - _beginTime);
-                Console.WriteLine("{0} milliseconds per {1} items = is {2} ms/item, {3} Hz",
-                    deltaTime,
-                    SeriesLength,
-                    (float)deltaTime / (float)SeriesLength,
-                    (float)1000 * SeriesLength / (float)deltaTime
-                    );
-                Console.WriteLine("{0} milliseconds per {1} bytes = is {2} ms/byte,  {3} bytes/sec, {4} bps",
-                    deltaTime,
-                    _receivedBytesCount,
-                    (float)deltaTime / (float)_receivedBytesCount,
-                    (float)1000 * _receivedBytesCount / (float)deltaTime,
-                    (float)8 * 1000 * _receivedBytesCount / (float)deltaTime
-                    );
-                _receivePlainTextFloatSeriesFinished = true;
-            }
-            _receivedItemsCount++;
+            LedStripCommands acknowledgedCommand = (LedStripCommands)receivedCommand.ReadBinInt16Arg();
+            Console.WriteLine(String.Format("Command \"{0}\"({1}) has been acknowledged.", acknowledgedCommand.ToString(), (int)acknowledgedCommand));
         }
 
-        private int CountBytesInCommand(CommandMessenger.Command command, bool printLfCr)
+        private void OnError(ReceivedCommand receivedCommand)
         {
-            var bytes = command.CommandString().Length; // Command + command separator
-            //var bytes = _cmdMessenger.CommandToString(command).Length + 1; // Command + command separator
-            if (printLfCr) bytes += 2; // Add  bytes for carriage return ('\r') and /or a newline  ('\n')
-            return bytes;
+            Console.Write("CmdError: ");
+            var CmdId = (LedStripCommands)receivedCommand.ReadBinInt16Arg();
+
+            if (CmdId == LedStripCommands.Unknown)
+            {
+                CmdId = (LedStripCommands)receivedCommand.ReadBinInt16Arg();
+                Console.WriteLine(String.Format("\"{0}\"({1}) Command is unknown to the Arduino.", CmdId.ToString(), (int)CmdId));
+            }
+            else if (CmdId == LedStripCommands.Acknowledge)
+            {
+                Console.WriteLine("Arduino received Acknowledge command, which is invalid.");
+            }
+            else
+            {
+                Console.WriteLine(CmdId.ToString());
+            }
         }
 
-        // Callback function To receive the binary float series from the Arduino
-        void OnReceiveBinaryFloatSeries(ReceivedCommand arguments)
+        private void OnPong(ReceivedCommand receivedCommand)
         {
-            var count = arguments.ReadBinUInt16Arg();
-            var receivedValue = arguments.ReadBinFloatArg();
-
-            _receivedBytesCount += CountBytesInCommand(arguments, false);
-
-            if (count != _receivedItemsCount)
-            {
-                Console.WriteLine("Values not matching: received {0} expected {1}", count, _receivedItemsCount);
-            }
-
-            if (_receivedItemsCount % (SeriesLength / 10) == 0)
-                Console.WriteLine("Received value: {0}", receivedValue);
-            if (_receivedItemsCount == 0)
-            {
-                // Received first value, start stopwatch
-                _beginTime = Millis;
-            }
-            else if (count == SeriesLength - 1)
-            {
-                // Received all values, stop stopwatch
-                _endTime = Millis;
-                var deltaTime = (_endTime - _beginTime);
-                Console.WriteLine("{0} milliseconds per {1} items = is {2} ms/item, {3} Hz",
-                    deltaTime,
-                    SeriesLength,
-                    (float)deltaTime / (float)SeriesLength,
-                    (float)1000 * SeriesLength / (float)deltaTime
-                    );
-                Console.WriteLine("{0} milliseconds per {1} bytes = is {2} ms/byte,  {3} bytes/sec, {4} bps",
-                    deltaTime,
-                    _receivedBytesCount,
-                    (float)deltaTime / (float)_receivedBytesCount,
-                    (float)1000 * _receivedBytesCount / (float)deltaTime,
-                    (float)8 * 1000 * _receivedBytesCount / (float)deltaTime
-                    );
-                _receiveBinaryFloatSeriesFinished = true;
-            }
-            _receivedItemsCount++;
+            Console.WriteLine("Received pong from the arduino.");
         }
-
-        // Return Milliseconds since 1970
-        public static long Millis { get { return (long)((DateTime.Now.ToUniversalTime() - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalMilliseconds); } }
     }
 }

@@ -37,7 +37,7 @@ namespace CommandMessenger.Transport.Serial
         private readonly byte[] _readBuffer = new byte[BufferSize];
         private int _bufferFilled;
 
-        private SerialPort _serialPort;                                         // The serial port
+        public SerialPort _serialPort;                                         // The serial port
         private SerialSettings _currentSerialSettings = new SerialSettings();   // The current serial settings
         public event EventHandler DataReceived;                                 // Event queue for all listeners interested in NewLinesReceived events.
 
@@ -122,12 +122,16 @@ namespace CommandMessenger.Transport.Serial
                 {
                     lock (_serialReadWriteLock)
                     {
-                        Console.Write("Buffer:");
-                        foreach (byte b in buffer)
+                        #if false
                         {
-                            Console.Write(String.Format(" {0}", b.ToString("X2")));
+                            Console.Write("Buffer:");
+                            foreach (byte b in buffer)
+                            {
+                                Console.Write(String.Format(" {0}", b.ToString("X2")));
+                            }
+                            Console.WriteLine();
                         }
-                        Console.WriteLine();
+                        #endif
                         _serialPort.Write(buffer, 0, buffer.Length);
                     }
                 }

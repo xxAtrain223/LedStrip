@@ -1,13 +1,33 @@
-#include <Arduino.h>
-
-#include "Stack.h"
-
-#include "PythonOpcode.h"
-
 #define INSTRUCTION_ARRAY_SIZE 16
+typedef unsigned char byte;
 
 namespace PyInt
 {
+  enum PythonOpcode {
+    UNARY_POSITIVE = 0,
+    UNARY_NEGATIVE,
+    UNARY_NOT,
+    UNARY_INVERT,
+    BINARY_POWER,
+    BINARY_MULTIPLY,
+    BINARY_MODULO,
+    BINARY_ADD,
+    BINARY_SUBTRACT,
+    BINARY_SUBSCR,
+    BINARY_FLOOR_DIVIDE,
+    BINARY_TRUE_DIVIDE,
+    BINARY_LSHIFT,
+    BINARY_RSHIFT,
+    BINARY_AND,
+    BINARY_XOR,
+    BINARY_OR,
+    RETURN_VALUE,
+    LOAD_CONST,
+    LOAD_NAME,
+    CALL_FUNCTION,
+    LENGTH
+  };
+
 	typedef struct
 	{
 		byte code;
@@ -28,6 +48,45 @@ namespace PyInt
 		g,
 		b
 	};
+
+  template <typename T, byte MAX_SIZE>
+  class Stack
+  {
+    T arr[MAX_SIZE];
+    byte top = 0;
+    byte max = MAX_SIZE;
+  
+  public:
+    void push(const T element)
+    {
+      arr[top++] = element;
+    }
+  
+    T pop()
+    {
+      return arr[--top];
+    }
+  
+    T peek() const
+    {
+      return arr[top - 1];
+    }
+  
+    bool isEmpty() const
+    {
+      return top == 0;
+    }
+  
+    bool isFull() const
+    {
+      return top == max;
+    }
+  
+    byte count() const
+    {
+      return top;
+    }
+  };
 
 	class Interpreter
 	{

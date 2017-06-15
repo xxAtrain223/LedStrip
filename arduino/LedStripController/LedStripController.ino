@@ -1,81 +1,149 @@
-// *** SendandReceiveBinaryArguments ***
+#include <EEPROM.h>
 
-// This example expands the previous SendandReceiveArguments example. The Arduino will 
-//  receive and send multiple Binary values, demonstrating that this is more compact and faster. 
-// Since the output is not human readable any more, the logging is disabled and the NewLines 
-// are removed
-//
-// It adds a demonstration of how to:
-// - Send binary parameters
-// - Receive binary parameters,
+#include <CmdMessenger.h>
+#include <FastLED.h>
 
+#include "PythonInterpreter.h"
 
-#include <CmdMessenger.h>  // CmdMessenger
+#define EEPROM_PATTERN_COUNT 8
 
-// Attach a new CmdMessenger object to the default Serial port
+#define PIN 6
+#define NUM_LEDS 60
+CRGB leds[NUM_LEDS];
+
 CmdMessenger cmdMessenger = CmdMessenger(Serial);
+PyInt::Interpreter interpreter;
 
-// This is the list of recognized commands. These can be commands that can either be sent or received. 
-// In order to receive, attach a callback function to these events
+typedef struct
+{
+  PyInt::Instruction patterns[EEPROM_PATTERN_COUNT][3][INSTRUCTION_ARRAY_SIZE];
+  byte ready;
+  byte currentPattern;
+  byte currentBrightness;
+} DeepStorage;
+
 enum
 {
-    kRequestPlainTextFloatSeries , // Command Request to send series in plain text
-    kReceivePlainTextFloatSeries , // Command to send an item in plain text
-    kRequestBinaryFloatSeries    , // Command Request to send series in binary form
-    kReceiveBinaryFloatSeries    , // Command to send an item in binary form
+  kPing,
+  kPong,
+  kUnknown,
+  kAcknowledge,
+  kError,
+  kSetPixel,
+  kFillSolid,
 };
 
-// Callbacks define on which received commands we take action
 void attachCommandCallbacks()
 {
   // Attach callback methods
-  cmdMessenger.attach(OnUnknownCommand);
-  cmdMessenger.attach(kRequestPlainTextFloatSeries, OnRequestPlainTextFloatSeries);
-  cmdMessenger.attach(kRequestBinaryFloatSeries,    OnRequestBinaryFloatSeries);
+  cmdMessenger.attach(OnUnknown);
+  cmdMessenger.attach(kPing, OnPing);
+  cmdMessenger.attach(kUnknown, OnUnknown);
+  cmdMessenger.attach(kAcknowledge, OnAcknowledge);
+  cmdMessenger.attach(kError, OnError);
+  cmdMessenger.attach(kSetPixel, OnSetPixel);
+  cmdMessenger.attach(kFillSolid, OnFillSolid);
+}
+
+void waitForArg()
+{
+  //while(!cmdMessenger.available())
+  //  delay(1);
 }
 
 // ------------------  C A L L B A C K S -----------------------
 
-// Called when a received command has no attached function
-void OnUnknownCommand()
+void OnPing()
 {
-  cmdMessenger.sendCmd(0,"Command without attached callback");
+  cmdMessenger.sendCmd(kPong);
 }
 
-// Callback function calculates the sum of the two received float values
-void OnRequestPlainTextFloatSeries()
+void OnUnknown()
 {
-  // Get series length from 1st parameter
-  int16_t seriesLength = cmdMessenger.readInt16Arg();
-  float seriesBase     = cmdMessenger.readFloatArg();
- 
-  // Send back series of floats
-  for(int i=0;i< seriesLength;i++) {
-     cmdMessenger.sendCmdStart (kReceivePlainTextFloatSeries);
-     cmdMessenger.sendCmdArg<uint16_t>((uint16_t)i);
-     cmdMessenger.sendCmdArg<float>(((float)i*(float)seriesBase),6);
-     cmdMessenger.sendCmdEnd ();
+  if (cmdMessenger.commandID() != kUnknown)
+  {
+    cmdMessenger.sendBinCmd(kUnknown, (uint16_t)cmdMessenger.commandID());
+  }
+  else
+  {
+    cmdMessenger.sendBinCmd(kError, kUnknown);
   }
 }
 
-// Callback function calculates the sum of the two received float values
-void OnRequestBinaryFloatSeries()
+void OnAcknowledge()
 {
-  // Get series length from 1st parameter
-  int16_t seriesLength = cmdMessenger.readBinArg<uint16_t>();
-  float seriesBase     = cmdMessenger.readBinArg<float>(); 
+  cmdMessenger.sendBinCmd(kError, kAcknowledge);
+}
 
-  // Disable new lines, this saves another 2 chars per command
-  cmdMessenger.printLfCr(false); 
-  // Send back series of floats
-  for(int i=0;i< seriesLength;i++) {
-     cmdMessenger.sendCmdStart (kReceiveBinaryFloatSeries);
-     cmdMessenger.sendCmdBinArg<uint16_t>((uint16_t)i);
-     cmdMessenger.sendCmdBinArg<float>(((float)i*(float)seriesBase));
-     cmdMessenger.sendCmdEnd ();
+void OnError()
+{
+  cmdMessenger.sendBinCmd(kError, kError);
+}
+
+
+
+void OnSetPixel()
+{
+  bool requested_ack;
+  do
+  {
+    requested_ack = cmdMessenger.readBinArg<bool>();
+  } while(!cmdMessenger.isArgOk());
+
+  byte index;
+  do
+  {
+    index = cmdMessenger.readBinArg<byte>();
+  } while(!cmdMessenger.isArgOk());
+  
+  if (index >= 0 && index < NUM_LEDS)
+  {
+    byte r, g, b;
+
+    do
+    {
+      r = cmdMessenger.readBinArg<byte>();
+    } while(!cmdMessenger.isArgOk());
+
+    do
+    {
+      g = cmdMessenger.readBinArg<byte>();
+    } while(!cmdMessenger.isArgOk());
+
+    do
+    {
+      b = cmdMessenger.readBinArg<byte>();
+    } while(!cmdMessenger.isArgOk());
+    
+    leds[index].r = r;
+    leds[index].g = g;
+    leds[index].b = b;
+    FastLED.show();
+    FastLED.delay(0);
   }
-  // Re-enable new lines, for human readability
-  cmdMessenger.printLfCr(true); 
+  else
+  {
+    cmdMessenger.sendBinCmd(kError, kSetPixel);
+    return;
+  }
+
+  if (requested_ack)
+    cmdMessenger.sendBinCmd(kAcknowledge, kSetPixel);
+}
+
+void OnFillSolid()
+{
+  bool requested_ack = cmdMessenger.readBinArg<bool>();
+  
+  byte r = cmdMessenger.readBinArg<byte>();
+  byte g = cmdMessenger.readBinArg<byte>();
+  byte b = cmdMessenger.readBinArg<byte>();
+  fill_solid(leds, NUM_LEDS, CRGB(r, g, b));
+  FastLED.show();
+  FastLED.delay(0);
+
+  if (requested_ack)
+    cmdMessenger.sendBinCmd(kAcknowledge, kFillSolid);
 }
 
 // ------------------ M A I N  ----------------------
@@ -84,27 +152,120 @@ void OnRequestBinaryFloatSeries()
 void setup() 
 {
   // Listen on serial connection for messages from the pc
-  Serial.begin(115200); 
-
-  // Adds newline to every command
-  cmdMessenger.printLfCr();   
+  Serial.begin(9600); 
 
   // Attach my application's user-defined callback methods
   attachCommandCallbacks();
-}
 
-// Returns if it has been more than interval (in ms) ago. Used for periodic actions
-bool hasExpired(unsigned long &prevTime, unsigned long interval) {
-  if (  millis() - prevTime > interval ) {
-    prevTime = millis();
-    return true;
-  } else     
-    return false;
-}
+  FastLED.addLeds<NEOPIXEL, PIN>(leds, NUM_LEDS);
 
+  interpreter.Sin = (byte(*)(byte))sin8;
+  interpreter.Cos = (byte(*)(byte))cos8;
+
+  interpreter.Time = 0;
+  interpreter.Index = 0;
+
+  if (!isEepromReady())
+    resetEeprom();
+
+  getPattern(getCurrentPattern());
+  FastLED.setBrightness(getCurrentBrightness());
+}
 // Loop function
 void loop() 
 {
   // Process incoming serial data, and perform callbacks
   cmdMessenger.feedinSerialData(); 
 } 
+
+void clearEeprom()
+{
+  for (auto eeptr : EEPROM)
+    eeptr.update(0);
+}
+
+bool isEepromReady()
+{
+  return EEPROM[offsetof(DeepStorage, ready)] == 42;
+}
+
+void resetEeprom()
+{
+  interpreter.r_instructions[0] = { PyInt::PythonOpcode::LOAD_CONST, 255 };
+  interpreter.r_instructions[1] = { PyInt::PythonOpcode::RETURN_VALUE, 0 };
+
+  interpreter.g_instructions[0] = { PyInt::PythonOpcode::LOAD_CONST, 255 };
+  interpreter.g_instructions[1] = { PyInt::PythonOpcode::RETURN_VALUE, 0 };
+
+  interpreter.b_instructions[0] = { PyInt::PythonOpcode::LOAD_CONST, 255 };
+  interpreter.b_instructions[1] = { PyInt::PythonOpcode::RETURN_VALUE, 0 };
+
+  for (byte i = 0; i < EEPROM_PATTERN_COUNT; i++)
+    setPattern(i);
+
+  setCurrentPattern(0);
+  setCurrentBrightness(255);
+
+  EEPROM[offsetof(DeepStorage, ready)] = 42;
+}
+
+byte getCurrentPattern()
+{
+  return EEPROM[offsetof(DeepStorage, currentPattern)];
+}
+
+void setCurrentPattern(byte index)
+{
+  EEPROM[offsetof(DeepStorage, currentPattern)] = index;
+}
+
+byte getCurrentBrightness()
+{
+  return EEPROM[offsetof(DeepStorage, currentBrightness)];
+}
+
+void setCurrentBrightness(byte brightness)
+{
+  EEPROM[offsetof(DeepStorage, currentBrightness)] = brightness;
+  FastLED.setBrightness(brightness);
+}
+
+void getPattern(byte index)
+{
+  PyInt::Instruction pattern[3][INSTRUCTION_ARRAY_SIZE];
+  EEPROM.get(offsetof(DeepStorage, patterns) + sizeof(PyInt::Instruction) * INSTRUCTION_ARRAY_SIZE * 3 * index, pattern);
+
+  for (byte i = 0; i < INSTRUCTION_ARRAY_SIZE; i++)
+  {
+    interpreter.r_instructions[i].code = pattern[0][i].code;
+    interpreter.r_instructions[i].arg = pattern[0][i].arg;
+
+    interpreter.g_instructions[i].code = pattern[1][i].code;
+    interpreter.g_instructions[i].arg = pattern[1][i].arg;
+
+    interpreter.b_instructions[i].code = pattern[2][i].code;
+    interpreter.b_instructions[i].arg = pattern[2][i].arg;
+  }
+
+  setCurrentPattern(index);
+}
+
+void setPattern(byte index)
+{
+  PyInt::Instruction pattern[3][INSTRUCTION_ARRAY_SIZE];
+  EEPROM.get(offsetof(DeepStorage, patterns) + sizeof(PyInt::Instruction) * INSTRUCTION_ARRAY_SIZE * 3 * index, pattern);
+
+  for (byte i = 0; i < INSTRUCTION_ARRAY_SIZE; i++)
+  {
+    pattern[0][i].code = interpreter.r_instructions[i].code;
+    pattern[0][i].arg = interpreter.r_instructions[i].arg;
+
+    pattern[1][i].code = interpreter.g_instructions[i].code;
+    pattern[1][i].arg = interpreter.g_instructions[i].arg;
+
+    pattern[2][i].code = interpreter.b_instructions[i].code;
+    pattern[2][i].arg = interpreter.b_instructions[i].arg;
+  }
+
+  EEPROM.put(offsetof(DeepStorage, patterns) + sizeof(PyInt::Instruction) * INSTRUCTION_ARRAY_SIZE * 3 * index, pattern);
+}
