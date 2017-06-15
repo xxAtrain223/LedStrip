@@ -53,7 +53,8 @@ class LedStripComm(object):
                          ["kIsEepromReadyResult", "?"],
                          ["kResetEeprom", "?"],
                          ["kReturnEeprom", "?"],
-                         ["kReturnEepromResult", "b*"]]
+                         ["kReturnEepromResult", "b*"],
+                         ["kJumpToDfu", "?"]]
         self.messenger = CmdMessenger(self.arduino, self.commands)
 
     def __enter__(self):
@@ -236,11 +237,14 @@ class LedStripComm(object):
             logger.info("{0:4d}: {1:3d}{2:s}".format(i, byte, " //" + s if s != "" else ""))
 
         return eeprom
+
+    def jumpToDfu(self):
+        self.send(True, False, "kJumpToDfu")
         
 with LedStripComm("COM6") as comm:
     comm.ping()
     
-    op = 5
+    op = 7
     if op == 0:
         comm.isEepromReady()
         comm.clearEeprom()
@@ -294,3 +298,6 @@ with LedStripComm("COM6") as comm:
                 dir = -1
             elif i <= 1:
                 dir = 1
+
+    elif op == 7:
+        comm.jumpToDfu()

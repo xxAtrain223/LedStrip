@@ -327,6 +327,11 @@ void cmdReturnEeprom()
 
 void cmdJumpToDfu()
 {
+    bool requested_ack = cmdMessenger.readBinArg<bool>();
+
+    if (requested_ack)
+        cmdMessenger.sendBinCmd(kAcknowledge, kJumpToDfu);
+    
     //TODO: Jump To DFU
 }
 #pragma endregion
