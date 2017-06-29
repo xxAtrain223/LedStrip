@@ -6,7 +6,11 @@ import dis
 import signal
 
 import logging
-from ourlogging import setup_logging
+
+if __name__ == "__main__":                # Stupid python stuff
+    from ourlogging import setup_logging  # This is the main script
+else:
+    from .ourlogging import setup_logging # This script is being imported
 setup_logging(__file__)
 logger = logging.getLogger(__name__)
 
@@ -27,11 +31,11 @@ class DelayedKeyboardInterrupt(object):
         if self.signal_received:
             self.old_handler(*self.signal_received)
 
-class LedStripComm(object):
+class LedStripMessenger(object):
     def __init__(self, port):
         self.arduino = ArduinoBoard(port, timeout=5.0, enable_dtr=False)
         self.commands = [["kAcknowledge", "i"],
-                         ["kError", "i"],
+                         ["kError", "i*"],
                          ["kUnknown", ""],
                          ["kPing", "?"],
                          ["kPingResult", "i"],
@@ -97,13 +101,17 @@ class LedStripComm(object):
     def close(self):
         self.arduino.close()
 
-    def ping(self):
-        response = self.send(True, True, "kPing")
-        if self.commands[response[0]][0] == "kPong":
-            logger.info("Received kPong")
-        else:
-            logger.error("Ping response was not pong")
-            logger.error("Actual response command was {}".format(repr(response)))
+    def ping(self, attempts = 5):
+        for i in range(attempts):
+            response = self.send(False, True, "kPing")
+            if response is not None and self.commands[response[0]][0] == "kPong":
+                logger.info("Received kPong")
+                break
+            else:
+                logger.error("Ping response was not pong")
+                logger.error("Actual response command was {}".format(repr(response)))
+                if i < attempts:
+                    logger.error("Trying again... {} tries remaining".format(attempts - i - 1))
 
     def uploadPattern(self, r_pattern, g_pattern, b_pattern):
         PythonOpcode = Enum("PythonOpcode",
@@ -239,65 +247,66 @@ class LedStripComm(object):
         return eeprom
 
     def jumpToDfu(self):
-        self.send(True, False, "kJumpToDfu")
+        self.send(False, False, "kJumpToDfu")
+
+if __name__ == "__main__":
+    with LedStripMessenger("/dev/LedStripController") as comm:
+        comm.ping()
         
-with LedStripComm("COM6") as comm:
-    comm.ping()
-    
-    op = 7
-    if op == 0:
-        comm.isEepromReady()
-        comm.clearEeprom()
-        comm.isEepromReady()
-        comm.resetEeprom()
-        comm.isEepromReady()
-    
-    elif op == 1:
-        comm.uploadPattern(
-            "sin(time + index + 0)",
-            "sin(time + index + 85)",
-            "sin(time + index + 170)"
-        )
-
-        comm.savePattern(0)
-
-    elif op == 2:
-        comm.uploadPattern(
-            "255",
-            "255",
-            "255"
-        )
-
-        comm.savePattern(1)
-
-    elif op == 3:
-        comm.loadPattern(0)
-
-    elif op == 4:
-        comm.setBrightness(255)
-
-    elif op == 5:
-        comm.returnEeprom()
-
-    elif op == 6:
-        comm.pauseCalculations()
-        comm.fillSolid(0, 0, 0)
+        op = 8
+        if op == 0:
+            comm.isEepromReady()
+            comm.clearEeprom()
+            comm.isEepromReady()
+            comm.resetEeprom()
+            comm.isEepromReady()
         
-        i = 1
-        dir = 1
-        while True:
-            if i - dir * 2 >= 0:
-                comm.setPixel(i - dir * 2, 0, 0, 0)
+        elif op == 1:
+            comm.uploadPattern(
+                "sin(time + index + 0)",
+                "sin(time + index + 85)",
+                "sin(time + index + 170)"
+            )
 
-            comm.setPixel(i - 1, 255, 0, 0)
-            comm.setPixel(i, 255, 0, 0)
-            comm.setPixel(i + 1, 255, 0, 0)
+            comm.savePattern(0)
 
-            i += dir
-            if i >= 58:
-                dir = -1
-            elif i <= 1:
-                dir = 1
+        elif op == 2:
+            comm.uploadPattern(
+                "255",
+                "255",
+                "255"
+            )
 
-    elif op == 7:
-        comm.jumpToDfu()
+            comm.savePattern(1)
+
+        elif op == 3:
+            comm.loadPattern(0)
+
+        elif op == 4:
+            comm.setBrightness(255)
+
+        elif op == 5:
+            comm.returnEeprom()
+
+        elif op == 6:
+            comm.pauseCalculations()
+            comm.fillSolid(0, 0, 0)
+            
+            i = 1
+            dir = 1
+            while True:
+                if i - dir * 2 >= 0:
+                    comm.setPixel(i - dir * 2, 0, 0, 0)
+
+                comm.setPixel(i - 1, 255, 0, 0)
+                comm.setPixel(i, 255, 0, 0)
+                comm.setPixel(i + 1, 255, 0, 0)
+
+                i += dir
+                if i >= 58:
+                    dir = -1
+                elif i <= 1:
+                    dir = 1
+
+        elif op == 7:
+            comm.jumpToDfu()

@@ -8,8 +8,8 @@
 
 #define EEPROM_PATTERN_COUNT 8
 
-#define PIN 6
-#define NUM_LEDS 60
+#define PIN PD7
+#define NUM_LEDS 120
 CRGB leds[NUM_LEDS];
 
 PyInt::Interpreter interp;
@@ -110,7 +110,11 @@ void attachCommandCallbacks()
 
 void unknownCommand()
 {
-    cmdMessenger.sendBinCmd(kError, kUnknown);
+    //cmdMessenger.sendBinCmd(kError, kUnknown);
+    cmdMessenger.sendCmdStart(kError);
+    cmdMessenger.sendCmdBinArg(kUnknown);
+    cmdMessenger.sendCmdBinArg((int)cmdMessenger.commandID());
+    cmdMessenger.sendCmdEnd();
 }
 
 void cmdPing()
@@ -145,7 +149,7 @@ void cmdResumeCalculations()
 
 void uploadPattern(PyInt::InstructionSet set)
 {
-    byte opcode = 0, arg = 0;
+    //byte opcode = 0, arg = 0;
     PyInt::Instruction* instructions = NULL;
 
     switch (set)
@@ -163,7 +167,7 @@ void uploadPattern(PyInt::InstructionSet set)
         break;
     }
 
-    for (byte i = 0; i < INSTRUCTION_ARRAY_SIZE && opcode != PyInt::Opcode::RETURN_VALUE; i++)
+    for (byte i = 0; i < INSTRUCTION_ARRAY_SIZE && (i == 0 || instructions[i-1].code != PyInt::Opcode::RETURN_VALUE); i++)
     {
         instructions[i].code = cmdMessenger.readBinArg<byte>();
         instructions[i].arg = cmdMessenger.readBinArg<byte>();
@@ -320,7 +324,7 @@ void cmdReturnEeprom()
         cmdMessenger.sendBinCmd(kAcknowledge, kReturnEeprom);
 
     cmdMessenger.sendCmdStart(kReturnEepromResult);
-    for (uint16_t i; i < EEPROM.length(); i++)
+    for (uint16_t i = 0; i < EEPROM.length(); i++)
         cmdMessenger.sendCmdBinArg((byte)EEPROM[i]);
     cmdMessenger.sendCmdEnd();
 

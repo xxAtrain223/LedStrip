@@ -1,0 +1,337 @@
+INFO - Sending kPing
+ERROR - Acknowledgement error
+ERROR - Actual response was ('kError', [2], 1497838527.244731).
+ERROR - Acknowledged Command was kUnknown.
+ERROR - Command was kPing.
+ERROR - Response error
+ERROR - Actual response command was None
+ERROR - Command was kPing.
+ERROR - Logging an uncaught exception
+Traceback (most recent call last):
+  File "../Messenger/ledStripMessenger.py", line 245, in <module>
+    comm.ping()
+  File "../Messenger/ledStripMessenger.py", line 102, in ping
+    if self.commands[response[0]][0] == "kPong":
+TypeError: 'NoneType' object is not subscriptable
+INFO - Sending kPing
+INFO - Received kAcknowledge for kPing
+INFO - Received kPong
+INFO - Sending kJumpToDfu
+ERROR - Logging an uncaught exception
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/site-packages/serial/serialposix.py", line 501, in read
+    'device reports readiness to read but returned no data '
+serial.serialutil.SerialException: device reports readiness to read but returned no data (device disconnected or multiple access on port?)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "../Messenger/ledStripMessenger.py", line 303, in <module>
+    comm.jumpToDfu()
+  File "../Messenger/ledStripMessenger.py", line 242, in jumpToDfu
+    self.send(True, False, "kJumpToDfu")
+  File "../Messenger/ledStripMessenger.py", line 71, in send
+    acknowledgement = self.messenger.receive()
+  File "/usr/local/lib/python3.6/site-packages/PyCmdMessenger/PyCmdMessenger.py", line 192, in receive
+    tmp = self.board.read()
+  File "/usr/local/lib/python3.6/site-packages/PyCmdMessenger/arduino.py", line 173, in read
+    return self.comm.read()
+  File "/usr/local/lib/python3.6/site-packages/serial/serialposix.py", line 508, in read
+    raise SerialException('read failed: {}'.format(e))
+serial.serialutil.SerialException: read failed: device reports readiness to read but returned no data (device disconnected or multiple access on port?)
+INFO - Sending kPing
+ERROR - Acknowledgement error
+ERROR - Actual response was ('kError', [2], 1497838680.3908975).
+ERROR - Acknowledged Command was kUnknown.
+ERROR - Command was kPing.
+ERROR - Response error
+ERROR - Actual response command was None
+ERROR - Command was kPing.
+ERROR - Logging an uncaught exception
+Traceback (most recent call last):
+  File "../Messenger/ledStripMessenger.py", line 245, in <module>
+    comm.ping()
+  File "../Messenger/ledStripMessenger.py", line 102, in ping
+    if self.commands[response[0]][0] == "kPong":
+TypeError: 'NoneType' object is not subscriptable
+INFO - Sending kPing
+INFO - Received kAcknowledge for kPing
+INFO - Received kPong
+INFO - Sending kJumpToDfu
+ERROR - Logging an uncaught exception
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/site-packages/serial/serialposix.py", line 501, in read
+    'device reports readiness to read but returned no data '
+serial.serialutil.SerialException: device reports readiness to read but returned no data (device disconnected or multiple access on port?)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "../Messenger/ledStripMessenger.py", line 303, in <module>
+    comm.jumpToDfu()
+  File "../Messenger/ledStripMessenger.py", line 242, in jumpToDfu
+    self.send(True, False, "kJumpToDfu")
+  File "../Messenger/ledStripMessenger.py", line 71, in send
+    acknowledgement = self.messenger.receive()
+  File "/usr/local/lib/python3.6/site-packages/PyCmdMessenger/PyCmdMessenger.py", line 192, in receive
+    tmp = self.board.read()
+  File "/usr/local/lib/python3.6/site-packages/PyCmdMessenger/arduino.py", line 173, in read
+    return self.comm.read()
+  File "/usr/local/lib/python3.6/site-packages/serial/serialposix.py", line 508, in read
+    raise SerialException('read failed: {}'.format(e))
+serial.serialutil.SerialException: read failed: device reports readiness to read but returned no data (device disconnected or multiple access on port?)
+ERROR - Logging an uncaught exception
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/site-packages/serial/serialposix.py", line 265, in open
+    self.fd = os.open(self.portstr, os.O_RDWR | os.O_NOCTTY | os.O_NONBLOCK)
+FileNotFoundError: [Errno 2] No such file or directory: '/dev/LedStripController'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "../Messenger/ledStripMessenger.py", line 244, in <module>
+    with LedStripComm("/dev/LedStripController") as comm:
+  File "../Messenger/ledStripMessenger.py", line 32, in __init__
+    self.arduino = ArduinoBoard(port, timeout=5.0, enable_dtr=False)
+  File "/usr/local/lib/python3.6/site-packages/PyCmdMessenger/arduino.py", line 67, in __init__
+    self.open()
+  File "/usr/local/lib/python3.6/site-packages/PyCmdMessenger/arduino.py", line 161, in open
+    self.comm.open()
+  File "/usr/local/lib/python3.6/site-packages/serial/serialposix.py", line 268, in open
+    raise SerialException(msg.errno, "could not open port {}: {}".format(self._port, msg))
+serial.serialutil.SerialException: [Errno 2] could not open port /dev/LedStripController: [Errno 2] No such file or directory: '/dev/LedStripController'
+ERROR - Logging an uncaught exception
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/site-packages/serial/serialposix.py", line 265, in open
+    self.fd = os.open(self.portstr, os.O_RDWR | os.O_NOCTTY | os.O_NONBLOCK)
+FileNotFoundError: [Errno 2] No such file or directory: '/dev/LedStripController'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "../Messenger/ledStripMessenger.py", line 244, in <module>
+    with LedStripComm("/dev/LedStripController") as comm:
+  File "../Messenger/ledStripMessenger.py", line 32, in __init__
+    self.arduino = ArduinoBoard(port, timeout=5.0, enable_dtr=False)
+  File "/usr/local/lib/python3.6/site-packages/PyCmdMessenger/arduino.py", line 67, in __init__
+    self.open()
+  File "/usr/local/lib/python3.6/site-packages/PyCmdMessenger/arduino.py", line 161, in open
+    self.comm.open()
+  File "/usr/local/lib/python3.6/site-packages/serial/serialposix.py", line 268, in open
+    raise SerialException(msg.errno, "could not open port {}: {}".format(self._port, msg))
+serial.serialutil.SerialException: [Errno 2] could not open port /dev/LedStripController: [Errno 2] No such file or directory: '/dev/LedStripController'
+ERROR - Logging an uncaught exception
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/site-packages/serial/serialposix.py", line 265, in open
+    self.fd = os.open(self.portstr, os.O_RDWR | os.O_NOCTTY | os.O_NONBLOCK)
+FileNotFoundError: [Errno 2] No such file or directory: '/dev/LedStripController'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "../Messenger/ledStripMessenger.py", line 244, in <module>
+    with LedStripComm("/dev/LedStripController") as comm:
+  File "../Messenger/ledStripMessenger.py", line 32, in __init__
+    self.arduino = ArduinoBoard(port, timeout=5.0, enable_dtr=False)
+  File "/usr/local/lib/python3.6/site-packages/PyCmdMessenger/arduino.py", line 67, in __init__
+    self.open()
+  File "/usr/local/lib/python3.6/site-packages/PyCmdMessenger/arduino.py", line 161, in open
+    self.comm.open()
+  File "/usr/local/lib/python3.6/site-packages/serial/serialposix.py", line 268, in open
+    raise SerialException(msg.errno, "could not open port {}: {}".format(self._port, msg))
+serial.serialutil.SerialException: [Errno 2] could not open port /dev/LedStripController: [Errno 2] No such file or directory: '/dev/LedStripController'
+ERROR - Logging an uncaught exception
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/site-packages/serial/serialposix.py", line 265, in open
+    self.fd = os.open(self.portstr, os.O_RDWR | os.O_NOCTTY | os.O_NONBLOCK)
+FileNotFoundError: [Errno 2] No such file or directory: '/dev/LedStripController'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "../Messenger/ledStripMessenger.py", line 244, in <module>
+    with LedStripComm("/dev/LedStripController") as comm:
+  File "../Messenger/ledStripMessenger.py", line 32, in __init__
+    self.arduino = ArduinoBoard(port, timeout=5.0, enable_dtr=False)
+  File "/usr/local/lib/python3.6/site-packages/PyCmdMessenger/arduino.py", line 67, in __init__
+    self.open()
+  File "/usr/local/lib/python3.6/site-packages/PyCmdMessenger/arduino.py", line 161, in open
+    self.comm.open()
+  File "/usr/local/lib/python3.6/site-packages/serial/serialposix.py", line 268, in open
+    raise SerialException(msg.errno, "could not open port {}: {}".format(self._port, msg))
+serial.serialutil.SerialException: [Errno 2] could not open port /dev/LedStripController: [Errno 2] No such file or directory: '/dev/LedStripController'
+ERROR - Logging an uncaught exception
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/site-packages/serial/serialposix.py", line 265, in open
+    self.fd = os.open(self.portstr, os.O_RDWR | os.O_NOCTTY | os.O_NONBLOCK)
+FileNotFoundError: [Errno 2] No such file or directory: '/dev/LedStripController'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "../Messenger/ledStripMessenger.py", line 244, in <module>
+    with LedStripComm("/dev/LedStripController") as comm:
+  File "../Messenger/ledStripMessenger.py", line 32, in __init__
+    self.arduino = ArduinoBoard(port, timeout=5.0, enable_dtr=False)
+  File "/usr/local/lib/python3.6/site-packages/PyCmdMessenger/arduino.py", line 67, in __init__
+    self.open()
+  File "/usr/local/lib/python3.6/site-packages/PyCmdMessenger/arduino.py", line 161, in open
+    self.comm.open()
+  File "/usr/local/lib/python3.6/site-packages/serial/serialposix.py", line 268, in open
+    raise SerialException(msg.errno, "could not open port {}: {}".format(self._port, msg))
+serial.serialutil.SerialException: [Errno 2] could not open port /dev/LedStripController: [Errno 2] No such file or directory: '/dev/LedStripController'
+ERROR - Logging an uncaught exception
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/site-packages/serial/serialposix.py", line 265, in open
+    self.fd = os.open(self.portstr, os.O_RDWR | os.O_NOCTTY | os.O_NONBLOCK)
+FileNotFoundError: [Errno 2] No such file or directory: '/dev/LedStripController'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "../Messenger/ledStripMessenger.py", line 244, in <module>
+    with LedStripComm("/dev/LedStripController") as comm:
+  File "../Messenger/ledStripMessenger.py", line 32, in __init__
+    self.arduino = ArduinoBoard(port, timeout=5.0, enable_dtr=False)
+  File "/usr/local/lib/python3.6/site-packages/PyCmdMessenger/arduino.py", line 67, in __init__
+    self.open()
+  File "/usr/local/lib/python3.6/site-packages/PyCmdMessenger/arduino.py", line 161, in open
+    self.comm.open()
+  File "/usr/local/lib/python3.6/site-packages/serial/serialposix.py", line 268, in open
+    raise SerialException(msg.errno, "could not open port {}: {}".format(self._port, msg))
+serial.serialutil.SerialException: [Errno 2] could not open port /dev/LedStripController: [Errno 2] No such file or directory: '/dev/LedStripController'
+INFO - Sending kPing
+ERROR - Acknowledgement error
+ERROR - Actual response was ('kError', [2], 1497935284.4045472).
+ERROR - Acknowledged Command was kUnknown.
+ERROR - Command was kPing.
+ERROR - Response error
+ERROR - Actual response command was None
+ERROR - Command was kPing.
+ERROR - Ping response was not pong
+ERROR - Actual response command was None
+INFO - Sending kJumpToDfu
+INFO - Sending kPing
+ERROR - Acknowledgement error
+ERROR - Actual response was ('kError', [2], 1497935658.3975961).
+ERROR - Acknowledged Command was kUnknown.
+ERROR - Command was kPing.
+ERROR - Response error
+ERROR - Actual response command was None
+ERROR - Command was kPing.
+ERROR - Ping response was not pong
+ERROR - Actual response command was None
+INFO - Sending kPing
+ERROR - Acknowledgement error
+ERROR - Actual response was ('kError', [2], 1497935663.435666).
+ERROR - Acknowledged Command was kUnknown.
+ERROR - Command was kPing.
+ERROR - Response error
+ERROR - Actual response command was None
+ERROR - Command was kPing.
+ERROR - Ping response was not pong
+ERROR - Actual response command was None
+INFO - Sending kPing
+INFO - Received kAcknowledge for kPing
+INFO - Received kPong
+INFO - Sending kJumpToDfu
+INFO - Sending kPing
+ERROR - Response error
+ERROR - Actual response command was ('kError', [2], 1497935773.4742591)
+ERROR - Command was kPing.
+ERROR - Ping response was not pong
+ERROR - Actual response command was [2]
+INFO - Sending kPing
+INFO - Received kPong
+INFO - Sending kJumpToDfu
+INFO - Sending kPing
+ERROR - Response error
+ERROR - Actual response command was ('kError', [2], 1497936163.315839)
+ERROR - Command was kPing.
+ERROR - Ping response was not pong
+ERROR - Actual response command was [2]
+ERROR - Trying again... 3 tries remaining
+INFO - Sending kPing
+INFO - Received kPong
+INFO - Sending kJumpToDfu
+INFO - Sending kPing
+ERROR - Response error
+ERROR - Actual response command was ('kError', [2], 1497936558.4776218)
+ERROR - Command was kPing.
+ERROR - Ping response was not pong
+ERROR - Actual response command was [2]
+ERROR - Trying again... 3 tries remaining
+INFO - Sending kPing
+ERROR - Response error
+ERROR - Actual response command was None
+ERROR - Command was kPing.
+ERROR - Ping response was not pong
+ERROR - Actual response command was None
+ERROR - Trying again... 2 tries remaining
+INFO - Sending kPing
+ERROR - Response error
+ERROR - Actual response command was ('kError', [2], 1497936563.5144413)
+ERROR - Command was kPing.
+ERROR - Ping response was not pong
+ERROR - Actual response command was [2]
+ERROR - Trying again... 1 tries remaining
+INFO - Sending kJumpToDfu
+INFO - Sending kPing
+ERROR - Logging an uncaught exception
+Traceback (most recent call last):
+  File "../Messenger/ledStripMessenger.py", line 251, in <module>
+    comm.ping()
+  File "../Messenger/ledStripMessenger.py", line 104, in ping
+    response = self.send(False, True, "kPing")
+  File "../Messenger/ledStripMessenger.py", line 75, in send
+    response = self.messenger.receive()
+  File "/usr/local/lib/python3.6/site-packages/PyCmdMessenger/PyCmdMessenger.py", line 284, in receive
+    received.append(self._recv_methods[arg_format_list[i]](f))
+  File "/usr/local/lib/python3.6/site-packages/PyCmdMessenger/PyCmdMessenger.py", line 551, in _recv_int
+    return struct.unpack(self.board.int_type,value)[0]
+struct.error: unpack requires a bytes object of length 2
+INFO - Sending kPing
+INFO - Received kPong
+INFO - Sending kJumpToDfu
+INFO - Sending kPing
+ERROR - Response error
+ERROR - Actual response command was None
+ERROR - Command was kPing.
+ERROR - Ping response was not pong
+ERROR - Actual response command was None
+ERROR - Trying again... 2 tries remaining
+INFO - Sending kPing
+ERROR - Response error
+ERROR - Actual response command was None
+ERROR - Command was kPing.
+ERROR - Ping response was not pong
+ERROR - Actual response command was None
+ERROR - Trying again... 1 tries remaining
+INFO - Sending kPing
+ERROR - Response error
+ERROR - Actual response command was ('kError', [2, 0], 1497937875.2345645)
+ERROR - Command was kPing.
+ERROR - Ping response was not pong
+ERROR - Actual response command was [2, 0]
+ERROR - Trying again... 0 tries remaining
+INFO - Sending kJumpToDfu
+ERROR - Logging an uncaught exception
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/site-packages/serial/serialposix.py", line 265, in open
+    self.fd = os.open(self.portstr, os.O_RDWR | os.O_NOCTTY | os.O_NONBLOCK)
+FileNotFoundError: [Errno 2] No such file or directory: '/dev/LedStripController'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "../Messenger/ledStripMessenger.py", line 248, in <module>
+    with LedStripComm("/dev/LedStripController") as comm:
+  File "../Messenger/ledStripMessenger.py", line 32, in __init__
+    self.arduino = ArduinoBoard(port, timeout=5.0, enable_dtr=False)
+  File "/usr/local/lib/python3.6/site-packages/PyCmdMessenger/arduino.py", line 67, in __init__
+    self.open()
+  File "/usr/local/lib/python3.6/site-packages/PyCmdMessenger/arduino.py", line 161, in open
+    self.comm.open()
+  File "/usr/local/lib/python3.6/site-packages/serial/serialposix.py", line 268, in open
+    raise SerialException(msg.errno, "could not open port {}: {}".format(self._port, msg))
+serial.serialutil.SerialException: [Errno 2] could not open port /dev/LedStripController: [Errno 2] No such file or directory: '/dev/LedStripController'

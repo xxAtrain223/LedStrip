@@ -3,8 +3,11 @@ import logging.handlers
 import os
 import sys
 import re
-from colors import color
 
+if __name__.startswith("Messenger"): # Stupid python stuff
+    from .colors import color
+else:
+    from colors import color
 
 class GroupWriteRotatingFileHandler(logging.handlers.RotatingFileHandler):
     def _open(self):
@@ -26,7 +29,6 @@ class AnsiColorFormatter(logging.Formatter):
 
         s = self.formatter.format(record)
 
-        '''
         if record.levelname == 'CRITICAL':
             s = color(s, fg='red', style='negative')
         elif record.levelname == 'ERROR':
@@ -37,7 +39,6 @@ class AnsiColorFormatter(logging.Formatter):
             s = color(s, fg='blue')
         elif record.levelname == 'INFO':
             pass
-        '''
 
         return s
 
@@ -49,6 +50,7 @@ def setup_logging(fn):
     root = logging.getLogger()
     root.setLevel(logging.DEBUG)
 
+    '''
     # create file handler which logs even debug messages
     logfn = './%s.log' % os.path.split(fn)[-1].split('.')[0]
     fh_ = GroupWriteRotatingFileHandler(logfn, maxBytes=1024 * 1024 * 5, backupCount=10)
@@ -56,12 +58,13 @@ def setup_logging(fn):
     # Normally our Python scripts steady-state at 3.8%. With memory log buffering, this will increase.
     # Can be 5.0% after running arm_test.py now.
     fh = logging.handlers.MemoryHandler(1024 * 1024 * 10, logging.ERROR, fh_)
+    '''
 
     previous_handler = root.hasHandlers()
 
     formatter = logging.Formatter(fmt)
-    fh_.setFormatter(formatter)
-    root.addHandler(fh)
+    #fh_.setFormatter(formatter)
+    #root.addHandler(fh)
 
     if not previous_handler:
         # create console handler with a higher log level

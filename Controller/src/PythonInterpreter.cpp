@@ -5,32 +5,33 @@ namespace PyInt
 
     Interpreter::Interpreter()
     {
-        operations[UNARY_POSITIVE] = &unary_positive;
-        operations[UNARY_NEGATIVE] = &unary_negative;
-        operations[UNARY_NOT] = &unary_not;
-        operations[UNARY_INVERT] = &unary_invert;
-        operations[BINARY_POWER] = &binary_power;
-        operations[BINARY_MULTIPLY] = &binary_multiply;
-        operations[BINARY_MODULO] = &binary_modulo;
-        operations[BINARY_ADD] = &binary_add;
-        operations[BINARY_SUBTRACT] = &binary_subtract;
-        operations[BINARY_SUBSCR] = &binary_subscr;
-        operations[BINARY_FLOOR_DIVIDE] = &binary_floor_divide;
-        operations[BINARY_TRUE_DIVIDE] = &binary_true_divide;
-        operations[BINARY_LSHIFT] = &binary_lshift;
-        operations[BINARY_RSHIFT] = &binary_rshift;
-        operations[BINARY_AND] = &binary_and;
-        operations[BINARY_XOR] = &binary_xor;
-        operations[BINARY_OR] = &binary_or;
-        operations[RETURN_VALUE] = &return_value;
-        operations[LOAD_CONST] = &load_const;
-        operations[LOAD_NAME] = &load_name;
-        operations[CALL_FUNCTION] = &call_function;
+        operations[UNARY_POSITIVE] = &Interpreter::unary_positive;
+        operations[UNARY_NEGATIVE] = &Interpreter::unary_negative;
+        operations[UNARY_NOT] = &Interpreter::unary_not;
+        operations[UNARY_INVERT] = &Interpreter::unary_invert;
+        operations[BINARY_POWER] = &Interpreter::binary_power;
+        operations[BINARY_MULTIPLY] = &Interpreter::binary_multiply;
+        operations[BINARY_MODULO] = &Interpreter::binary_modulo;
+        operations[BINARY_ADD] = &Interpreter::binary_add;
+        operations[BINARY_SUBTRACT] = &Interpreter::binary_subtract;
+        operations[BINARY_SUBSCR] = &Interpreter::binary_subscr;
+        operations[BINARY_FLOOR_DIVIDE] = &Interpreter::binary_floor_divide;
+        operations[BINARY_TRUE_DIVIDE] = &Interpreter::binary_true_divide;
+        operations[BINARY_LSHIFT] = &Interpreter::binary_lshift;
+        operations[BINARY_RSHIFT] = &Interpreter::binary_rshift;
+        operations[BINARY_AND] = &Interpreter::binary_and;
+        operations[BINARY_XOR] = &Interpreter::binary_xor;
+        operations[BINARY_OR] = &Interpreter::binary_or;
+        operations[RETURN_VALUE] = &Interpreter::return_value;
+        operations[LOAD_CONST] = &Interpreter::load_const;
+        operations[LOAD_NAME] = &Interpreter::load_name;
+        operations[CALL_FUNCTION] = &Interpreter::call_function;
+
     }
 
     byte Interpreter::execute(InstructionSet set)
     {
-        Instruction *instructions;
+        Instruction *instructions = nullptr;
         switch (set)
         {
         case InstructionSet::r:
