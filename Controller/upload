@@ -1,6 +1,0 @@
-pio run
-
-python3.6 jumpToDfu.py
-sudo dfu-programmer atmega32u4 erase
-sudo dfu-programmer atmega32u4 flash .pioenvs/teensy20/firmware.hex
-sudo dfu-programmer atmega32u4 launch --no-reset

@@ -42,3 +42,29 @@ include $(DMBS_PATH)/gcc.mk
 include $(DMBS_PATH)/hid.mk
 include $(DMBS_PATH)/avrdude.mk
 include $(DMBS_PATH)/atprogram.mk
+
+#$(TARGET).c: all
+
+
+state.dfu: $(TARGET).hex
+	python build/jumpToDfu.py; test $$? -eq 0
+	touch state.dfu
+
+state.erase: state.dfu
+	sudo dfu-programmer $(MCU) erase; test $$? -eq 5
+	touch state.erase
+
+state.flash: state.erase
+	sudo dfu-programmer $(MCU) flash $(TARGET).hex --suppress-validation; test $$? -eq 0
+	touch state.flash
+
+state.launch: state.flash
+	sudo dfu-programmer $(MCU) launch --no-reset; test $$? -eq 254
+	touch state.launch
+
+upload: state.launch
+	rm state.dfu
+	rm state.erase
+	rm state.flash
+	rm state.launch
+	@echo "Firmware successfully uploaded"

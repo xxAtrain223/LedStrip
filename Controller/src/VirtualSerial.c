@@ -136,6 +136,7 @@ int main(void)
 
     //Show default led array
     ws2812_setleds     (led_default,led_len);
+    ws2812_setleds     (led_default,led_len);
 
     for (;;)
     {
