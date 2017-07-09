@@ -41,6 +41,10 @@
 #include <avr/interrupt.h>
 #include "atmel_bootloader.c"
 
+#include "Stream.h"
+#include "CmdMessenger.h"
+#include "millis.h"
+
 
 /** LUFA CDC Class driver interface configuration and state information. This structure is
  *  passed to all CDC Class driver functions, so that multiple instances of the same class
@@ -48,36 +52,34 @@
  */
 USB_ClassInfo_CDC_Device_t VirtualSerial_CDC_Interface =
     {
-        .Config =
+        {
+            INTERFACE_ID_CDC_CCI,
             {
-                .ControlInterfaceNumber   = INTERFACE_ID_CDC_CCI,
-                .DataINEndpoint           =
-                    {
-                        .Address          = CDC_TX_EPADDR,
-                        .Size             = CDC_TXRX_EPSIZE,
-                        .Banks            = 1,
-                    },
-                .DataOUTEndpoint =
-                    {
-                        .Address          = CDC_RX_EPADDR,
-                        .Size             = CDC_TXRX_EPSIZE,
-                        .Banks            = 1,
-                    },
-                .NotificationEndpoint =
-                    {
-                        .Address          = CDC_NOTIFICATION_EPADDR,
-                        .Size             = CDC_NOTIFICATION_EPSIZE,
-                        .Banks            = 1,
-                    },
+                CDC_TX_EPADDR,
+                CDC_TXRX_EPSIZE,
+                1,
             },
+            {
+                CDC_RX_EPADDR,
+                CDC_TXRX_EPSIZE,
+                1,
+            },
+            {
+                CDC_NOTIFICATION_EPADDR,
+                CDC_NOTIFICATION_EPSIZE,
+                1,
+            },
+        },
     };
+
+Stream comms(VirtualSerial_CDC_Interface);
+CmdMessenger messenger(comms);
 
 /** Standard file stream for the CDC interface when set up, so that the virtual CDC COM port can be
  *  used like any regular character stream in the C APIs.
  */
 
 #define led_len 120
-static FILE USBSerialStream;
 
 int uart_bytes_remaining;
 
@@ -87,8 +89,8 @@ struct cRGB led_cylon[led_len];
 struct cRGB led_temp[1];
 
 char command_buffer[32];
-char command_buffer_index;
-char command_buffer_len;
+unsigned char command_buffer_index;
+unsigned char command_buffer_len;
 
 int led_addr = 0;
 
@@ -124,9 +126,7 @@ int main(void)
     TCCR0B = 0x05;
 
     SetupHardware();
-
-    /* Create a regular character stream for the interface so that it can be used with the stdio.h functions */
-    CDC_Device_CreateStream(&VirtualSerial_CDC_Interface, &USBSerialStream); // Isn't Used right now, could be useful for cmdmessenger
+    init_millis(F_CPU);
 
     LEDs_SetAllLEDs(LEDMASK_USB_NOTREADY);
     GlobalInterruptEnable();
@@ -245,7 +245,7 @@ ISR(BADISR_vect) {}
 
 ISR(TIMER0_OVF_vect) {
     //Animate cylon
-    led_temp[0].r = led_cylon[led_len].r; led_temp[0].g = led_cylon[led_len].g; led_temp[0].b = led_cylon[led_len].b;
+    led_temp[0].r = led_cylon[led_len-1].r; led_temp[0].g = led_cylon[led_len-1].g; led_temp[0].b = led_cylon[led_len-1].b;
     for(led_addr = led_len ; led_addr >= 0 ; led_addr--) {
         if(led_addr == 0) {
             led_cylon[led_addr].r = led_temp[0].r;
@@ -329,5 +329,5 @@ void EVENT_CDC_Device_ControLineStateChanged(USB_ClassInfo_CDC_Device_t *const C
        application blocking while waiting for a host to become ready and read
        in the pending data from the USB endpoints.
     */
-    bool HostReady = (CDCInterfaceInfo->State.ControlLineStates.HostToDevice & CDC_CONTROL_LINE_OUT_DTR) != 0;
+    //bool HostReady = (CDCInterfaceInfo->State.ControlLineStates.HostToDevice & CDC_CONTROL_LINE_OUT_DTR) != 0;
 }
