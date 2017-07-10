@@ -24,12 +24,12 @@ REMEMBER: Add sei(); after init_millis() to enable global interrupts!
 
 
 
-volatile unsigned long timer2_millis; 
+volatile unsigned long timer3_millis; 
 //NOTE: A unsigned long holds values from 0 to 4,294,967,295 (2^32 - 1). It will roll over to 0 after reaching its maximum value.
 
-ISR(TIMER2_COMPA_vect)
+ISR(TIMER3_COMPA_vect)
 {
-  timer2_millis++;  
+  timer3_millis++;  
 }
 
 void init_millis(unsigned long f_cpu)
@@ -39,14 +39,14 @@ void init_millis(unsigned long f_cpu)
   ctc_match_overflow = ((f_cpu / 1000) / 8); //when timer1 is this value, 1ms has passed
     
   // (Set timer to clear when matching ctc_match_overflow) | (Set clock divisor to 8)
-  TCCR2B |= (1 << WGM22) | (1 << CS21);
+  TCCR3B |= (1 << WGM32) | (1 << CS31);
   
   // high byte first, then low byte
-  OCR2AH = (ctc_match_overflow >> 8);
-  OCR2AL = ctc_match_overflow;
+  OCR3AH = (ctc_match_overflow >> 8);
+  OCR3AL = ctc_match_overflow;
  
   // Enable the compare match interrupt
-  TIMSK2 |= (1 << OCIE2A);
+  TIMSK3 |= (1 << OCIE3A);
  
   //REMEMBER TO ENABLE GLOBAL INTERRUPTS AFTER THIS WITH sei(); !!!
 }
@@ -57,7 +57,7 @@ unsigned long millis ()
  
   // Ensure this cannot be disrupted
   ATOMIC_BLOCK(ATOMIC_FORCEON) {
-    millis_return = timer2_millis;
+    millis_return = timer3_millis;
   }
   return millis_return;
 } 
