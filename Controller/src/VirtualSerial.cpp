@@ -43,7 +43,6 @@
 
 #include "Stream.h"
 #include "CmdMessenger.h"
-#include "millis.h"
 
 
 /** LUFA CDC Class driver interface configuration and state information. This structure is

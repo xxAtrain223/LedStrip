@@ -22,44 +22,13 @@ REMEMBER: Add sei(); after init_millis() to enable global interrupts!
 #include <util/atomic.h>
 #include <avr/interrupt.h>
 
-
-
-volatile unsigned long timer3_millis; 
+extern volatile unsigned long timer3_millis;
 //NOTE: A unsigned long holds values from 0 to 4,294,967,295 (2^32 - 1). It will roll over to 0 after reaching its maximum value.
 
-ISR(TIMER3_COMPA_vect)
-{
-  timer3_millis++;  
-}
+ISR(TIMER3_COMPA_vect);
 
-void init_millis(unsigned long f_cpu)
-{
-  unsigned long ctc_match_overflow;
-  
-  ctc_match_overflow = ((f_cpu / 1000) / 8); //when timer1 is this value, 1ms has passed
-    
-  // (Set timer to clear when matching ctc_match_overflow) | (Set clock divisor to 8)
-  TCCR3B |= (1 << WGM32) | (1 << CS31);
-  
-  // high byte first, then low byte
-  OCR3AH = (ctc_match_overflow >> 8);
-  OCR3AL = ctc_match_overflow;
- 
-  // Enable the compare match interrupt
-  TIMSK3 |= (1 << OCIE3A);
- 
-  //REMEMBER TO ENABLE GLOBAL INTERRUPTS AFTER THIS WITH sei(); !!!
-}
+void init_millis(unsigned long f_cpu);
 
-unsigned long millis ()
-{
-  unsigned long millis_return;
- 
-  // Ensure this cannot be disrupted
-  ATOMIC_BLOCK(ATOMIC_FORCEON) {
-    millis_return = timer3_millis;
-  }
-  return millis_return;
-} 
+unsigned long millis();
 
 #endif /* MILLIS_H_ */
