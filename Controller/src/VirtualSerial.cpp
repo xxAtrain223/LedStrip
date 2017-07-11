@@ -72,7 +72,7 @@ USB_ClassInfo_CDC_Device_t VirtualSerial_CDC_Interface =
     };
 
 Stream comms(VirtualSerial_CDC_Interface);
-CmdMessenger messenger(comms);
+CmdMessenger cmdMessenger(comms);
 
 /** Standard file stream for the CDC interface when set up, so that the virtual CDC COM port can be
  *  used like any regular character stream in the C APIs.
@@ -94,6 +94,69 @@ unsigned char command_buffer_len;
 int led_addr = 0;
 
 static inline int is_odd_A(int x) { return x & 1; }
+
+enum {
+    kAcknowledge,
+    kError,
+    kUnknown,
+    kPing,
+    kPingResult,
+    kPong,
+    kPauseCalculations,
+    kResumeCalculations,
+    kUploadRedPattern,
+    kUploadGreenPattern,
+    kUploadBluePattern,
+    kSavePattern,
+    kLoadPattern,
+    kGetBrightness,
+    kGetBrightnessResult,
+    kSetBrightness,
+    kSetPixel,
+    kFillSolid,
+    kClearEeprom,
+    kIsEepromReady,
+    kIsEepromReadyResult,
+    kResetEeprom,
+    kReturnEeprom,
+    kReturnEepromResult,
+    kJumpToDfu
+};
+
+void unknownCommand()
+{
+    //cmdMessenger.sendBinCmd(kError, kUnknown);
+    cmdMessenger.sendCmdStart((uint8_t)kError);
+    cmdMessenger.sendCmdBinArg((uint8_t)kUnknown);
+    cmdMessenger.sendCmdBinArg((int)cmdMessenger.commandID());
+    cmdMessenger.sendCmdEnd();
+}
+
+void cmdPing()
+{
+    bool requested_ack = cmdMessenger.readBinArg<bool>();
+
+    if (requested_ack)
+        cmdMessenger.sendBinCmd((uint8_t)kAcknowledge, (uint8_t)kPing);
+
+    cmdMessenger.sendBinCmd((uint8_t)kPingResult, (uint8_t)kPong);
+}
+
+void cmdJumpToDfu()
+{
+    bool requested_ack = cmdMessenger.readBinArg<bool>();
+
+    if (requested_ack)
+        cmdMessenger.sendBinCmd((uint8_t)kAcknowledge, (uint8_t)kJumpToDfu);
+    
+    
+    TIMSK0 = 0;
+    TCCR0B = 0;
+    cli();
+    MCUSR |= (1 << WDRF);
+    wdt_enable(WDTO_15MS);
+    while(1) {}
+}
 
 /** Main program entry point. This routine contains the overall program flow, including initial
  *  setup of all components and the main program loop.
@@ -137,103 +200,13 @@ int main(void)
     ws2812_setleds     (led_default,led_len);
     ws2812_setleds     (led_default,led_len);
 
+    cmdMessenger.attach(unknownCommand);
+    cmdMessenger.attach(kPing, cmdPing);
+    cmdMessenger.attach(kJumpToDfu, cmdJumpToDfu);
+
     for (;;)
     {
-        //CheckJoystickMovement();
-
-        /* Must throw away unused bytes from the host, or it will lock up while waiting for the device */
-        uart_bytes_remaining = CDC_Device_ReceiveByte(&VirtualSerial_CDC_Interface); //Receive one byte
-
-
-
-        if (uart_bytes_remaining >= 0) { //If received byte is not 0
-                CDC_Device_SendByte(&VirtualSerial_CDC_Interface,uart_bytes_remaining); //Echo it
-
-                //If received byte is  LF or CR
-                if ((uart_bytes_remaining == 10) || (uart_bytes_remaining == 13)) {
-
-                    if (((command_buffer[0] == 's') || (command_buffer[0] == 'S')) && ((command_buffer[1] == 'l') || (command_buffer[1] == 'L'))) {
-                        //Syntax: [sS][lL] <pixel> <r> <g> <b>
-                        // pixel is limited to 0-9
-                        // rgb vals are limited to 0-127, val must fit in one charater
-
-                        led_default[command_buffer[3]-48].r = command_buffer[5];
-                        led_default[command_buffer[3]-48].g = command_buffer[7];
-                        led_default[command_buffer[3]-48].b = command_buffer[9];
-
-                        ws2812_setleds     (led_default,led_len);
-
-                        CDC_Device_SendString(&VirtualSerial_CDC_Interface,"\r\nChanging LED Pin\r\n");
-
-                    } else     if(command_buffer[0] == '1') {
-                        //Turn on debug pin
-
-                        PORTD = 0x08; //Set Port D Pin 3 to high
-                        CDC_Device_SendString(&VirtualSerial_CDC_Interface,"\r\nDebug LED On\r\n");
-
-                    } else if (command_buffer[0] == '0') {
-                        //Turn off debug pin
-
-                        PORTD = 0x00; //Set Port D Pin 3 to low
-                        CDC_Device_SendString(&VirtualSerial_CDC_Interface,"\r\nDebug LED Off\r\n");
-
-                    } else if(command_buffer[0] == 'a') {
-                        //Set led array to default
-                        //Note: The default array may have been changed
-
-                        ws2812_setleds(led_default,led_len);
-                        CDC_Device_SendString(&VirtualSerial_CDC_Interface,"\r\nDefault Sequence\r\n");
-
-                    } else if(command_buffer[0] == 'b') {
-                        //Set led array to white
-
-                        ws2812_setleds(led_white,led_len);
-                        CDC_Device_SendString(&VirtualSerial_CDC_Interface,"\r\nWhite Sequence\r\n");
-
-                    } else if(command_buffer[0] == 'x') {
-                        //Jump to DFU
-
-                        TIMSK0 = 0;
-                        TCCR0B = 0;
-                        CDC_Device_SendString(&VirtualSerial_CDC_Interface,"\r\nJumping to DFU...\r\n");
-                        cli();
-                        MCUSR |= (1 << WDRF);
-                        wdt_enable(WDTO_15MS);
-                        while(1) {}
-
-                    } else if(command_buffer[0] == 'g') {
-                        TIMSK0 ^= 1; //Toggle the overflow interrupt enable for the shifting animation
-                        CDC_Device_SendString(&VirtualSerial_CDC_Interface,"\r\nCylon Sequence\r\n");
-                    }
-
-                    //Clear serial buffer
-                    for (command_buffer_index = 0 ; command_buffer_index < 32 ; command_buffer_index++) {
-                        command_buffer[command_buffer_index] = 0;
-                    }
-
-                    command_buffer_index = 0;
-
-                } else {
-                    //Received byte is not LF or RF
-
-                    if (command_buffer_index < 32) {
-                        //Only add byte to array if there is space left
-                        command_buffer[command_buffer_index] = uart_bytes_remaining;
-
-                        command_buffer_index++;
-
-                    }
-
-                }
-
-
-        }
-
-        if(TIMSK0 & 1) {
-            ws2812_setleds(led_cylon,led_len);
-        }
-
-
+        cmdMessenger.feedinSerialData();
         //Do LUFA Stuff
         CDC_Device_USBTask(&VirtualSerial_CDC_Interface);
         USB_USBTask();

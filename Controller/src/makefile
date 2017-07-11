@@ -54,8 +54,8 @@ state.erase: state.dfu
 	sudo dfu-programmer $(MCU) erase; test $$? -eq 5
 	touch state.erase
 
-state.flash: state.erase
-	sudo dfu-programmer $(MCU) flash $(TARGET).hex --suppress-validation; test $$? -eq 0
+state.flash:
+	sudo dfu-programmer $(MCU) flash $(TARGET).hex --force --suppress-validation; test $$? -eq 0
 	touch state.flash
 
 state.launch: state.flash
@@ -63,8 +63,8 @@ state.launch: state.flash
 	touch state.launch
 
 upload: state.launch
-	rm state.dfu
-	rm state.erase
-	rm state.flash
-	rm state.launch
+	rm -f state.dfu
+	rm -f state.erase
+	rm -f state.flash
+	rm -f state.launch
 	@echo "Firmware successfully uploaded"
