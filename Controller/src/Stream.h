@@ -6,28 +6,19 @@
 
 class Stream
 {
-    USB_ClassInfo_CDC_Device_t CDCInterfaceInfo;
+    USB_ClassInfo_CDC_Device_t* CDCInterfaceInfo;
 
 public:
-    Stream(USB_ClassInfo_CDC_Device_t &VirtualSerial) : CDCInterfaceInfo(VirtualSerial) {}
+    Stream(USB_ClassInfo_CDC_Device_t* VirtualSerial) : CDCInterfaceInfo(VirtualSerial) {}
 
     int available()
     {
-        return CDC_Device_BytesReceived(&CDCInterfaceInfo);
+        return CDC_Device_BytesReceived(CDCInterfaceInfo);
     }
 
     int read()
     {
-        int16_t byte = CDC_Device_ReceiveByte(&CDCInterfaceInfo);
-        if (byte >= 0)
-        {
-            PORTD = 0x08;
-            unsigned long t1 = millis();
-            while ((millis() - t1) < 500) {}
-            PORTD = 0x00;
-            print((uint8_t)byte);
-        }
-        return byte;
+        return CDC_Device_ReceiveByte(CDCInterfaceInfo);
     }
 
     size_t readBytes(char *buffer, size_t length)
@@ -53,29 +44,29 @@ public:
 
     size_t print(const char msg[])
     {
-        CDC_Device_SendString(&CDCInterfaceInfo, msg);
-        CDC_Device_Flush(&CDCInterfaceInfo);
+        CDC_Device_SendString(CDCInterfaceInfo, msg);
+        CDC_Device_Flush(CDCInterfaceInfo);
         return 0; // TODO: Count number bytes actually sent
     }
 
     size_t print(const char msg)
     {
-        CDC_Device_SendByte(&CDCInterfaceInfo, (unsigned char)msg);
-        CDC_Device_Flush(&CDCInterfaceInfo);
+        CDC_Device_SendByte(CDCInterfaceInfo, (unsigned char)msg);
+        CDC_Device_Flush(CDCInterfaceInfo);
         return 0; // TODO: Count number bytes actually sent
     }
 
     size_t print(const unsigned char msg)
     {
-        CDC_Device_SendByte(&CDCInterfaceInfo, msg);
-        CDC_Device_Flush(&CDCInterfaceInfo);
+        CDC_Device_SendByte(CDCInterfaceInfo, msg);
+        CDC_Device_Flush(CDCInterfaceInfo);
         return 0; // TODO: Count number bytes actually sent
     }
 
     size_t println()
     {
-        CDC_Device_SendString(&CDCInterfaceInfo, "\r\n");
-        CDC_Device_Flush(&CDCInterfaceInfo);
+        CDC_Device_SendString(CDCInterfaceInfo, "\r\n");
+        CDC_Device_Flush(CDCInterfaceInfo);
         return 0; // TODO: Count number bytes actually sent
     }
 };

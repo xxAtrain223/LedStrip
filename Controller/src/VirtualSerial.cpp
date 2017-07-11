@@ -71,7 +71,7 @@ USB_ClassInfo_CDC_Device_t VirtualSerial_CDC_Interface =
         },
     };
 
-Stream comms(VirtualSerial_CDC_Interface);
+Stream comms(&VirtualSerial_CDC_Interface);
 CmdMessenger cmdMessenger(comms);
 
 /** Standard file stream for the CDC interface when set up, so that the virtual CDC COM port can be
@@ -94,6 +94,12 @@ unsigned char command_buffer_len;
 int led_addr = 0;
 
 static inline int is_odd_A(int x) { return x & 1; }
+
+void delay(unsigned long t)
+{
+    unsigned long t1 = millis();
+    while ((millis() - t1) < t) {}
+}
 
 enum {
     kAcknowledge,
@@ -140,6 +146,14 @@ void cmdPing()
         cmdMessenger.sendBinCmd((uint8_t)kAcknowledge, (uint8_t)kPing);
 
     cmdMessenger.sendBinCmd((uint8_t)kPingResult, (uint8_t)kPong);
+
+    for (int i = 0; i < 3; i++)
+    {
+        PORTD = 0x08;
+        delay(50);
+        PORTD = 0x00;
+        delay(50);
+    }
 }
 
 void cmdJumpToDfu()
@@ -207,6 +221,7 @@ int main(void)
     for (;;)
     {
         cmdMessenger.feedinSerialData();
+
         //Do LUFA Stuff
         CDC_Device_USBTask(&VirtualSerial_CDC_Interface);
         USB_USBTask();

@@ -127,20 +127,13 @@ void CmdMessenger::attach(byte msgId, messengerCallbackFunction newFunction)
  */
 void CmdMessenger::feedinSerialData()
 {
-    int16_t byte = comms->read();
-    if (byte < 0)
-        return;
-
-    /*
-    streamBuffer[0] = (char)byte;
-
     while (!pauseProcessing && comms->available())
     {
         // The Stream class has a readBytes() function that reads many bytes at once. On Teensy 2.0 and 3.0, readBytes() is optimized. 
         // Benchmarks about the incredible difference it makes: http://www.pjrc.com/teensy/benchmark_usb_serial_receive.html
 
         size_t bytesAvailable = min(comms->available(), MAXSTREAMBUFFERSIZE);
-        comms->readBytes(streamBuffer+1, bytesAvailable);
+        comms->readBytes(streamBuffer, bytesAvailable);
 
         // Process the bytes in the stream buffer, and handles dispatches callbacks, if commands are received
         for (size_t byteNo = 0; byteNo < bytesAvailable; byteNo++)
@@ -154,7 +147,6 @@ void CmdMessenger::feedinSerialData()
             }
         }
     }
-    */
 }
 
 /**
