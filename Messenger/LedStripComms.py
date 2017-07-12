@@ -103,13 +103,17 @@ class LedStripMessenger(object):
 
     def ping(self, attempts = 5):
         for i in range(attempts):
-            response = self.send(False, True, "kPing")
-            if response is not None and self.commands[response[0]][0] == "kPong":
-                logger.info("Received kPong")
-                break
-            else:
-                logger.error("Ping response was not pong")
-                logger.error("Actual response command was {}".format(repr(response)))
+            try:
+                response = self.send(False, True, "kPing")
+                if response is not None and self.commands[response[0]][0] == "kPong":
+                    logger.info("Received kPong")
+                    break
+                else:
+                    logger.error("Ping response was not pong")
+                    logger.error("Actual response command was {}".format(repr(response)))
+                    if i < attempts:
+                        logger.error("Trying again... {} tries remaining".format(attempts - i - 1))
+            except:
                 if i < attempts:
                     logger.error("Trying again... {} tries remaining".format(attempts - i - 1))
 

@@ -54,3 +54,10 @@ unsigned long millis()
   }
   return millis_return;
 } 
+
+void delay(unsigned long milliseconds)
+{
+    unsigned long start = millis();
+    while ((millis() - start) < milliseconds);
+}
+

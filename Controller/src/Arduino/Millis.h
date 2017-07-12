@@ -31,4 +31,6 @@ void init_millis(unsigned long f_cpu);
 
 unsigned long millis();
 
+void delay(unsigned long milliseconds);
+
 #endif /* MILLIS_H_ */
