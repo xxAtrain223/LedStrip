@@ -33,12 +33,12 @@ class DelayedKeyboardInterrupt(object):
 
 class LedStripMessenger(object):
     def __init__(self, port):
-        self.arduino = ArduinoBoard(port, timeout=5.0, enable_dtr=False)
-        self.commands = [["kAcknowledge", "i"],
-                         ["kError", "i*"],
+        self.arduino = ArduinoBoard(port, timeout=5.0, enable_dtr=False, baud_rate=115200)
+        self.commands = [["kAcknowledge", "b"],
+                         ["kError", "b*"],
                          ["kUnknown", ""],
                          ["kPing", "?"],
-                         ["kPingResult", "i"],
+                         ["kPingResult", "b"],
                          ["kPong", ""],
                          ["kPauseCalculations", "?"],
                          ["kResumeCalculations", "?"],

@@ -35,8 +35,8 @@
 #endif
 typedef unsigned char byte;
 
-#include "Stream.h"
-#include "millis.h"
+#include "Arduino/Stream.h"
+#include "Arduino/Millis.h"
 
 extern "C"
 {

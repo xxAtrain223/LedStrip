@@ -41,7 +41,7 @@
 #include <avr/interrupt.h>
 #include "atmel_bootloader.c"
 
-#include "Stream.h"
+#include "Arduino/Stream.h"
 #include "CmdMessenger.h"
 
 
