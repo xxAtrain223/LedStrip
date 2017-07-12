@@ -1,5 +1,11 @@
-from PyCmdMessenger import CmdMessenger
-from PyCmdMessenger import ArduinoBoard
+try:
+    from LocalPyCmdMessenger import CmdMessenger
+except:
+    from PyCmdMessenger import CmdMessenger
+try:
+    from LocalArduino import ArduinoBoard
+except:
+    from PyCmdMessenger import ArduinoBoard
 
 from enum import Enum
 import dis
@@ -104,7 +110,7 @@ class LedStripMessenger(object):
     def ping(self, attempts = 5):
         for i in range(attempts):
             try:
-                response = self.send(False, True, "kPing")
+                response = self.send(True, True, "kPing")
                 if response is not None and self.commands[response[0]][0] == "kPong":
                     logger.info("Received kPong")
                     break
@@ -203,7 +209,7 @@ class LedStripMessenger(object):
         self.send(False, False, "kSetPixel", index, r, g, b)
 
     def fillSolid(self, r, g, b):
-        self.send(False, False, "kFillSolid", r, g, b)
+        self.send(True, False, "kFillSolid", r, g, b)
 
     def setDeltaHue(self, deltaHue):
         self.send(True, False, "kSetDeltaHue", deltaHue)
@@ -256,8 +262,10 @@ class LedStripMessenger(object):
 if __name__ == "__main__":
     with LedStripMessenger("/dev/LedStripController") as comm:
         comm.ping()
+
+        sleep(1.0)
         
-        op = 8
+        op = 7
         if op == 0:
             comm.isEepromReady()
             comm.clearEeprom()
@@ -293,9 +301,9 @@ if __name__ == "__main__":
             comm.returnEeprom()
 
         elif op == 6:
-            comm.pauseCalculations()
+            #comm.pauseCalculations()
             comm.fillSolid(0, 0, 0)
-            
+         
             i = 1
             dir = 1
             while True:
@@ -307,10 +315,27 @@ if __name__ == "__main__":
                 comm.setPixel(i + 1, 255, 0, 0)
 
                 i += dir
-                if i >= 58:
+                if i >= 118:
                     dir = -1
                 elif i <= 1:
                     dir = 1
 
         elif op == 7:
+            comm.fillSolid(0, 0, 0)
+
+            i = 2
+            dir = 1
+            t1 = time()
+            while True:
+                t2 = time()
+                print((t2 - t1) * 1000)
+                t1 = t2
+                comm.setPixel(i - dir, 0, 0, 0)
+                comm.setPixel(i, 255, 0, 0)
+
+                if i == 119 or i == 1:
+                    dir *= -1
+                i += dir
+
+        elif op == 8:
             comm.jumpToDfu()

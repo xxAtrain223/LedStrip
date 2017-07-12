@@ -4,12 +4,15 @@ import subprocess
 import serial
 
 
-with serial.Serial("/dev/LedStripController") as comms:
-    while True:
-        try:
-            comms.write(b"x\n")
-        except:
-            break
+sys.path.append("..")
+sys.path.append("../..")
+sys.path.append("../../..")
+from Messenger.LedStripComms import LedStripMessenger
+
+
+with LedStripMessenger("/dev/LedStripController") as comms:
+    comms.ping()
+    comms.jumpToDfu()
 
     for i in range(10):
         exit_code = subprocess.call("sudo dfu-programmer atmega32u4 get family".split())

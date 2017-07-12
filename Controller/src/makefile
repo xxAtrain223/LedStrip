@@ -47,14 +47,10 @@ include $(DMBS_PATH)/atprogram.mk
 
 
 state.dfu: $(TARGET).hex
-	python build/jumpToDfu.py; test $$? -eq 0
+	python3.6 build/jumpToDfu.py; test $$? -eq 0
 	touch state.dfu
 
-state.erase: state.dfu
-	sudo dfu-programmer $(MCU) erase; test $$? -eq 5
-	touch state.erase
-
-state.flash:
+state.flash: state.dfu
 	sudo dfu-programmer $(MCU) flash $(TARGET).hex --force --suppress-validation; test $$? -eq 0
 	touch state.flash
 
