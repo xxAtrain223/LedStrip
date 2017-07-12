@@ -44,12 +44,15 @@
 		#include <string.h>
 		#include <stdio.h>
 
-		#include "Descriptors.h"
-
 		#include <LUFA/Drivers/Board/LEDs.h>
 		#include <LUFA/Drivers/Board/Joystick.h>
 		#include <LUFA/Drivers/USB/USB.h>
 		#include <LUFA/Platform/Platform.h>
+
+		#include "Serial/Descriptors.h"
+
+        #include "CmdMessenger/CmdMessenger.h"
+        #include "ws2812/light_ws2812.h"
 
 	/* Macros: */
 		/** LED mask for the library LED driver, to indicate that the USB interface is not ready. */
@@ -71,6 +74,12 @@
 		void EVENT_USB_Device_Disconnect(void);
 		void EVENT_USB_Device_ConfigurationChanged(void);
 		void EVENT_USB_Device_ControlRequest(void);
+
+        extern Stream comms;;
+        extern CmdMessenger cmdMessenger;
+
+        #define NUM_LEDS 120
+        extern struct cRGB leds[NUM_LEDS];
 
 #endif
 
