@@ -10,6 +10,7 @@ except:
 from enum import Enum
 import dis
 import signal
+from collections import namedtuple
 
 import logging
 
@@ -53,9 +54,8 @@ class LedStripMessenger(object):
                          ["kUploadBluePattern", "?b*"],
                          ["kSavePattern", "?b"],
                          ["kLoadPattern", "?b"],
-                         ["kGetBrightness", "?"],
-                         ["kGetBrightnessResult", "b"],
-                         ["kSetBrightness", "?b"],
+                         ["kGetPixel", "?b"],
+                         ["kGetPixelResult", "bbb"],
                          ["kSetPixel", "?bbbb"],
                          ["kFillSolid", "?bbb"],
                          ["kClearEeprom", "?"],
@@ -199,11 +199,8 @@ class LedStripMessenger(object):
     def resumeCalculations(self):
         self.send(True, False, "kResumeCalculations")
 
-    def getBrightness(self):
-        return self.send(True, True, "kGetBrightness")[0]
-
-    def setBrightness(self, brightness):
-        self.send(True, False, "kSetBrightness", brightness)
+    def getPixel(self, index):
+        return namedtuple("RGB", "r g b")(*self.send(True, True, "kGetPixel", index))
 
     def setPixel(self, index, r, g, b):
         self.send(False, False, "kSetPixel", index, r, g, b)
@@ -249,8 +246,8 @@ class LedStripMessenger(object):
                 s += "ready"
             elif i == 769:
                 s += "currentPattern"
-            elif i == 770:
-                s += "currentBrightness"
+            #elif i == 770:
+            #    s += "currentBrightness"
 
             logger.info("{0:4d}: {1:3d}{2:s}".format(i, byte, " //" + s if s != "" else ""))
 
@@ -265,7 +262,7 @@ if __name__ == "__main__":
 
         sleep(1.0)
         
-        op = 7
+        op = 5
         if op == 0:
             comm.isEepromReady()
             comm.clearEeprom()
@@ -333,9 +330,48 @@ if __name__ == "__main__":
                 comm.setPixel(i - dir, 0, 0, 0)
                 comm.setPixel(i, 255, 0, 0)
 
-                if i == 119 or i == 1:
+                if i == 119 or i == 0:
                     dir *= -1
                 i += dir
 
         elif op == 8:
             comm.jumpToDfu()
+
+        elif op == 9:
+            comm.fillSolid(0, 0, 0)
+
+            t1 = time()
+            for k in range(5):
+                for i in range(3):
+                    for j in range(256):
+                        if i == 0:
+                            r = j
+                            g = 0
+                            b = 0
+                        elif i == 1:
+                            r = 255
+                            g = j
+                            b = 0
+                        elif i == 2:
+                            r = 255
+                            g = 255
+                            b = j
+
+                        comm.setPixel(k, r, g, b)
+            t2 = time()
+            print((t2 - t1) * 1000)
+
+        elif op == 10:
+            comm.fillSolid(0, 0, 0)
+            for i in range(120):
+                comm.setPixel(i, 255, 0, 0)
+        
+            for i in range(120):
+                comm.setPixel(i, 0, 255, 0)
+
+            for i in range(120):
+                comm.setPixel(i, 0, 0, 255)
+
+        elif op == 11:
+            for i in range(10):
+                print(comm.getPixel(i))

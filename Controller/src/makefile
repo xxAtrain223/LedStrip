@@ -18,7 +18,10 @@ F_CPU        = 16000000
 F_USB        = $(F_CPU)
 OPTIMIZATION = s
 TARGET       = LedStripController
-SRC          = $(TARGET).cpp Commands.cpp ws2812/light_ws2812.c Serial/Descriptors.c CmdMessenger/CmdMessenger.cpp Arduino/Millis.cpp Arduino/Stream.cpp Arduino/Print.cpp Arduino/WString.cpp $(LUFA_SRC_USB) $(LUFA_SRC_USBCLASS)
+SRC          = $(TARGET).cpp Commands.cpp CmdMessenger/CmdMessenger.cpp PythonInterpreter.cpp EepromInteractors.cpp TrigFunctions.cpp \
+               ws2812/light_ws2812.c Serial/Descriptors.c \
+               Arduino/Millis.cpp Arduino/Stream.cpp Arduino/Print.cpp Arduino/WString.cpp \
+               $(LUFA_SRC_USB) $(LUFA_SRC_USBCLASS)
 LUFA_PATH    = ./LUFA
 CC_FLAGS     = -DUSE_LUFA_CONFIG_HEADER -IConfig/
 LD_FLAGS     =

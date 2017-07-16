@@ -18,6 +18,8 @@ with LedStripMessenger("/dev/LedStripController") as comms:
         exit_code = subprocess.call("sudo dfu-programmer atmega32u4 get family".split())
         if exit_code == 0:
             print("In DFU mode")
-            break
+            sys.exit(0)
         else:
             time.sleep(0.5)
+
+    sys.exit(1)

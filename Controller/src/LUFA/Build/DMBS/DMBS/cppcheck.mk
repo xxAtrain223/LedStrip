@@ -39,7 +39,7 @@ $(call ERROR_IF_NONBOOL, CPPCHECK_FAIL_ON_WARNING)
 $(call ERROR_IF_NONBOOL, CPPCHECK_QUIET)
 
 # Build a default argument list for cppcheck
-BASE_CPPCHECK_FLAGS := --template="$(CPPCHECK_MSG_TEMPLATE)" $(CPPCHECK_INCLUDES:%=-I%) $(CPPCHECK_EXCLUDES:%=-i%) --inline-suppr --force --std=c99
+BASE_CPPCHECK_FLAGS := --template="$(CPPCHECK_MSG_TEMPLATE)" $(CPPCHECK_INCLUDES:%=-I%) $(CPPCHECK_EXCLUDES:%=-i%) --inline-suppr --force #--std=c99
 
 # Sanity check parameters and construct additional command line arguments to cppcheck
 ifeq ($(CPPCHECK_FAIL_ON_WARNING), Y)

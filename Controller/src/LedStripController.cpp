@@ -4,6 +4,9 @@
 
 #include "LedStripController.h"
 #include "Commands.h"
+#include "PythonInterpreter.h"
+#include "EepromInteractors.h"
+#include "TrigFunctions.h"
 
 USB_ClassInfo_CDC_Device_t VirtualSerial_CDC_Interface =
     {
@@ -32,9 +35,32 @@ CmdMessenger cmdMessenger(comms);
 
 struct cRGB leds[NUM_LEDS];
 
+PyInt::Interpreter interp;
+
+bool CalculateColors = true;
+
 /** Main program entry point. This routine contains the overall program flow, including initial
  *  setup of all components and the main program loop.
  */
+
+void debugLedOn()
+{
+    PORTD = 0x08;
+}
+
+void debugLedOff()
+{
+    PORTD = 0x00;
+}
+
+void debugLedToggle()
+{
+    if (PORTD == 0x08)
+        PORTD = 0x00;
+    else
+        PORTD = 0x08;
+}
+
 int main(void)
 {
     SetupHardware();
@@ -54,14 +80,40 @@ int main(void)
     }
 
     //Display the leds
-    delay(100);
+    ws2812_setleds(leds, NUM_LEDS);
     ws2812_setleds(leds, NUM_LEDS);
 
     attachCommandCallbacks();
 
+    interp.Sin = sin8;
+    interp.Cos = cos8;
+
+    interp.Time = 0;
+    interp.Index = 0;
+
+    if (!isEepromReady())
+        resetEeprom();
+    getPattern(getCurrentPattern());
+
     while (true)
     {
         cmdMessenger.feedinSerialData();
+
+        if (CalculateColors)
+        {
+            for (uint8_t i = 0; i < NUM_LEDS; i++)
+            {
+                interp.Index = i;
+
+                leds[i].r = interp.execute(PyInt::r);
+                leds[i].g = interp.execute(PyInt::g);
+                leds[i].b = interp.execute(PyInt::b);
+            }
+            
+            interp.Time = (interp.Time + 1) % 256;
+
+            ws2812_setleds(leds, NUM_LEDS);
+        }
 
         //Do LUFA Stuff
         CDC_Device_USBTask(&VirtualSerial_CDC_Interface);

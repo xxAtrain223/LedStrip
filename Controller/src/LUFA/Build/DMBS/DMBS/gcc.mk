@@ -23,8 +23,8 @@ endif
 COMPILER_PATH      ?=
 OPTIMIZATION       ?= s
 F_CPU              ?=
-C_STANDARD         ?= gnu99
-CPP_STANDARD       ?= gnu++98
+C_STANDARD         ?= gnu11
+CPP_STANDARD       ?= gnu++11
 C_FLAGS            ?=
 CPP_FLAGS          ?=
 ASM_FLAGS          ?=

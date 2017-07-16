@@ -53,6 +53,7 @@
 
         #include "CmdMessenger/CmdMessenger.h"
         #include "ws2812/light_ws2812.h"
+        #include "PythonInterpreter.h"
 
 	/* Macros: */
 		/** LED mask for the library LED driver, to indicate that the USB interface is not ready. */
@@ -78,8 +79,12 @@
         extern Stream comms;;
         extern CmdMessenger cmdMessenger;
 
+        extern PyInt::Interpreter interp;
+
         #define NUM_LEDS 120
         extern struct cRGB leds[NUM_LEDS];
+
+        extern bool CalculateColors;
 
 #endif
 
