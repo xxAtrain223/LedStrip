@@ -5,7 +5,7 @@
 
 #include "PythonInterpreter.h"
 
-#define EEPROM_PATTERN_COUNT 8
+#define EEPROM_PATTERN_COUNT 4
 
 typedef struct
 {

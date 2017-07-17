@@ -5,18 +5,13 @@ namespace PyInt
 
     Interpreter::Interpreter()
     {
-        operations[UNARY_POSITIVE] = &Interpreter::unary_positive;
         operations[UNARY_NEGATIVE] = &Interpreter::unary_negative;
-        operations[UNARY_NOT] = &Interpreter::unary_not;
         operations[UNARY_INVERT] = &Interpreter::unary_invert;
-        operations[BINARY_POWER] = &Interpreter::binary_power;
         operations[BINARY_MULTIPLY] = &Interpreter::binary_multiply;
         operations[BINARY_MODULO] = &Interpreter::binary_modulo;
         operations[BINARY_ADD] = &Interpreter::binary_add;
         operations[BINARY_SUBTRACT] = &Interpreter::binary_subtract;
-        operations[BINARY_SUBSCR] = &Interpreter::binary_subscr;
         operations[BINARY_FLOOR_DIVIDE] = &Interpreter::binary_floor_divide;
-        operations[BINARY_TRUE_DIVIDE] = &Interpreter::binary_true_divide;
         operations[BINARY_LSHIFT] = &Interpreter::binary_lshift;
         operations[BINARY_RSHIFT] = &Interpreter::binary_rshift;
         operations[BINARY_AND] = &Interpreter::binary_and;
@@ -51,17 +46,7 @@ namespace PyInt
         return rv;
     }
 
-    uint8_t Interpreter::unary_positive(uint8_t arg)
-    {
-        return 0;
-    }
-
     uint8_t Interpreter::unary_negative(uint8_t arg)
-    {
-        return 0;
-    }
-
-    uint8_t Interpreter::unary_not(uint8_t arg)
     {
         return 0;
     }
@@ -71,69 +56,83 @@ namespace PyInt
         return 0;
     }
 
-    uint8_t Interpreter::binary_power(uint8_t arg)
-    {
-        return 0;
-    }
-
     uint8_t Interpreter::binary_multiply(uint8_t arg)
     {
+        uint8_t tos = stack.pop();
+        uint8_t tos1 = stack.pop();
+        stack.push(tos1 * tos);
         return 0;
     }
 
     uint8_t Interpreter::binary_modulo(uint8_t arg)
     {
+        uint8_t tos = stack.pop();
+        uint8_t tos1 = stack.pop();
+        stack.push(tos1 % tos);
         return 0;
     }
 
     uint8_t Interpreter::binary_add(uint8_t arg)
     {
-        stack.push(stack.pop() + stack.pop());
+        uint8_t tos = stack.pop();
+        uint8_t tos1 = stack.pop();
+        stack.push(tos1 + tos);
         return 0;
     }
 
     uint8_t Interpreter::binary_subtract(uint8_t arg)
     {
-        return 0;
-    }
-
-    uint8_t Interpreter::binary_subscr(uint8_t arg)
-    {
+        uint8_t tos = stack.pop();
+        uint8_t tos1 = stack.pop();
+        stack.push(tos1 - tos);
         return 0;
     }
 
     uint8_t Interpreter::binary_floor_divide(uint8_t arg)
     {
-        return 0;
-    }
-
-    uint8_t Interpreter::binary_true_divide(uint8_t arg)
-    {
+        uint8_t tos = stack.pop();
+        uint8_t tos1 = stack.pop();
+        stack.push(tos1 / tos);
         return 0;
     }
 
     uint8_t Interpreter::binary_lshift(uint8_t arg)
     {
+        uint8_t tos = stack.pop();
+        uint8_t tos1 = stack.pop();
+        stack.push(tos1 << tos);
         return 0;
     }
 
     uint8_t Interpreter::binary_rshift(uint8_t arg)
     {
+        uint8_t tos = stack.pop();
+        uint8_t tos1 = stack.pop();
+        stack.push(tos1 >> tos);
         return 0;
     }
 
     uint8_t Interpreter::binary_and(uint8_t arg)
     {
+        uint8_t tos = stack.pop();
+        uint8_t tos1 = stack.pop();
+        stack.push(tos1 & tos);
         return 0;
     }
 
     uint8_t Interpreter::binary_xor(uint8_t arg)
     {
+        uint8_t tos = stack.pop();
+        uint8_t tos1 = stack.pop();
+        stack.push(tos1 ^ tos);
         return 0;
     }
 
     uint8_t Interpreter::binary_or(uint8_t arg)
     {
+        uint8_t tos = stack.pop();
+        uint8_t tos1 = stack.pop();
+        stack.push(tos1 | tos);
         return 0;
     }
 

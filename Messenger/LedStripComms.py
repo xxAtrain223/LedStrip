@@ -126,18 +126,13 @@ class LedStripMessenger(object):
     def uploadPattern(self, r_pattern, g_pattern, b_pattern):
         PythonOpcode = Enum("PythonOpcode",
             '''
-            UNARY_POSITIVE
             UNARY_NEGATIVE
-            UNARY_NOT
             UNARY_INVERT
-            BINARY_POWER
             BINARY_MULTIPLY
             BINARY_MODULO
             BINARY_ADD
             BINARY_SUBTRACT
-            BINARY_SUBSCR
             BINARY_FLOOR_DIVIDE
-            BINARY_TRUE_DIVIDE
             BINARY_LSHIFT
             BINARY_RSHIFT
             BINARY_AND
@@ -170,20 +165,30 @@ class LedStripMessenger(object):
                 else:
                     argval = int(argval)    
 
+                print("{}\t\t{}".format(i.opname, i.argval))
+                if not (i.opname in PythonOpcode.__members__):
+                    raise Exception("{} is not supported".format(i.opname))
+
                 rv.append(PythonOpcode[i.opname].value - 1)
                 rv.append(argval)
 
-            if len(rv) > 16:
-                logger.error("Instruction set is greater than allowed, 16.")
-                logger.error("Actual length is {}.".format(len(rv)))
-                rv = []
+            if len(rv) > 32:
+                e = "Instruction set is greater than allowed, 32. "
+                e += "Actual length is {}.".format(len(rv))
+                raise Exception(e)
 
             return rv
 
+        r = compilePattern(r_pattern)
+        print()
+        g = compilePattern(g_pattern)
+        print()
+        b = compilePattern(b_pattern)
+
         self.pauseCalculations()
-        self.send(True, False, "kUploadRedPattern", *compilePattern(r_pattern))
-        self.send(True, False, "kUploadGreenPattern", *compilePattern(g_pattern))
-        self.send(True, False, "kUploadBluePattern", *compilePattern(b_pattern))
+        self.send(True, False, "kUploadRedPattern", *r)
+        self.send(True, False, "kUploadGreenPattern", *g)
+        self.send(True, False, "kUploadBluePattern", *b)
         self.resumeCalculations()
         logger.info("Pattern uploaded")
 
@@ -262,7 +267,7 @@ if __name__ == "__main__":
 
         sleep(1.0)
         
-        op = 5
+        op = 4
         if op == 0:
             comm.isEepromReady()
             comm.clearEeprom()
@@ -289,10 +294,18 @@ if __name__ == "__main__":
             comm.savePattern(1)
 
         elif op == 3:
-            comm.loadPattern(0)
+            comm.loadPattern(1)
 
         elif op == 4:
-            comm.setBrightness(255)
+            timeScale = 10
+            indexScale = 3
+            comm.uploadPattern(
+                "sin(time * {} + index * {} + 0)".format(timeScale, indexScale),
+                "sin(time * {} + index * {} + 85)".format(timeScale, indexScale),
+                "sin(time * {} + index * {} + 170)".format(timeScale, indexScale)
+            )
+
+            comm.savePattern(1)
 
         elif op == 5:
             comm.returnEeprom()

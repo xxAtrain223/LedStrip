@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define INSTRUCTION_ARRAY_SIZE 16
+#define INSTRUCTION_ARRAY_SIZE 32
 
 namespace PyInt
 {
@@ -29,18 +29,13 @@ namespace PyInt
     };
 
     enum Opcode {
-        UNARY_POSITIVE = 0,
-        UNARY_NEGATIVE,
-        UNARY_NOT,
+        UNARY_NEGATIVE = 0,
         UNARY_INVERT,
-        BINARY_POWER,
         BINARY_MULTIPLY,
         BINARY_MODULO,
         BINARY_ADD,
         BINARY_SUBTRACT,
-        BINARY_SUBSCR,
         BINARY_FLOOR_DIVIDE,
-        BINARY_TRUE_DIVIDE,
         BINARY_LSHIFT,
         BINARY_RSHIFT,
         BINARY_AND,
@@ -152,18 +147,13 @@ namespace PyInt
         Stack<uint8_t, 8> stack;
         uint8_t(Interpreter::*operations[Opcode::LENGTH])(uint8_t);
 
-        uint8_t unary_positive(uint8_t arg);
         uint8_t unary_negative(uint8_t arg);
-        uint8_t unary_not(uint8_t arg);
         uint8_t unary_invert(uint8_t arg);
-        uint8_t binary_power(uint8_t arg);
         uint8_t binary_multiply(uint8_t arg);
         uint8_t binary_modulo(uint8_t arg);
         uint8_t binary_add(uint8_t arg);
         uint8_t binary_subtract(uint8_t arg);
-        uint8_t binary_subscr(uint8_t arg);
         uint8_t binary_floor_divide(uint8_t arg);
-        uint8_t binary_true_divide(uint8_t arg);
         uint8_t binary_lshift(uint8_t arg);
         uint8_t binary_rshift(uint8_t arg);
         uint8_t binary_and(uint8_t arg);
