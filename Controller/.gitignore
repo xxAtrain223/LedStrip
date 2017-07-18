@@ -1,2 +1,8 @@
-.pioenvs
-.piolibdeps
+*.bin
+*.eep
+*.elf
+*.hex
+*.lss
+*.map
+*.sym
+obj/

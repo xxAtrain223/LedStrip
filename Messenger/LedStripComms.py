@@ -180,9 +180,7 @@ class LedStripMessenger(object):
             return rv
 
         r = compilePattern(r_pattern)
-        print()
         g = compilePattern(g_pattern)
-        print()
         b = compilePattern(b_pattern)
 
         self.pauseCalculations()
@@ -267,7 +265,7 @@ if __name__ == "__main__":
 
         sleep(1.0)
         
-        op = 4
+        op = 5
         if op == 0:
             comm.isEepromReady()
             comm.clearEeprom()

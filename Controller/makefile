@@ -26,6 +26,7 @@ LUFA_PATH    = ./LUFA
 CC_FLAGS     = -DUSE_LUFA_CONFIG_HEADER -IConfig/
 LD_FLAGS     =
 SHELL		 = cmd.exe
+OUTDIR       = output
 
 # Default target
 all:
@@ -44,17 +45,13 @@ include $(DMBS_PATH)/dfu.mk
 include $(DMBS_PATH)/gcc.mk
 include $(DMBS_PATH)/hid.mk
 include $(DMBS_PATH)/avrdude.mk
-include $(DMBS_PATH)/atprogram.mk
 
-#$(TARGET).c: all
-
-
-state.dfu: $(TARGET).hex
+state.dfu: hex
 	python3.6 build/jumpToDfu.py; test $$? -eq 0
 	touch state.dfu
 
 state.flash: state.dfu
-	sudo dfu-programmer $(MCU) flash $(TARGET).hex --force --suppress-validation; test $$? -eq 0
+	sudo dfu-programmer $(MCU) flash $(OUTDIR)/$(TARGET).hex --force --suppress-validation; test $$? -eq 0
 	touch state.flash
 
 state.launch: state.flash
@@ -63,7 +60,6 @@ state.launch: state.flash
 
 upload: state.launch
 	rm -f state.dfu
-	rm -f state.erase
 	rm -f state.flash
 	rm -f state.launch
 	@echo "Firmware successfully uploaded"

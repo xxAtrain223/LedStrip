@@ -9,7 +9,7 @@
 DMBS_BUILD_MODULES         += GCC
 DMBS_BUILD_TARGETS         += size symbol-sizes all lib elf bin hex lss clean mostlyclean
 DMBS_BUILD_MANDATORY_VARS  += TARGET ARCH MCU SRC
-DMBS_BUILD_OPTIONAL_VARS   += COMPILER_PATH OPTIMIZATION C_STANDARD CPP_STANDARD F_CPU C_FLAGS CPP_FLAGS ASM_FLAGS CC_FLAGS LD_FLAGS OBJDIR OBJECT_FILES DEBUG_TYPE DEBUG_LEVEL LINKER_RELAXATIONS JUMP_TABLES
+DMBS_BUILD_OPTIONAL_VARS   += COMPILER_PATH OPTIMIZATION C_STANDARD CPP_STANDARD F_CPU C_FLAGS CPP_FLAGS ASM_FLAGS CC_FLAGS LD_FLAGS OBJDIR OUTDIR OBJECT_FILES DEBUG_TYPE DEBUG_LEVEL LINKER_RELAXATIONS JUMP_TABLES
 DMBS_BUILD_PROVIDED_VARS   +=
 DMBS_BUILD_PROVIDED_MACROS +=
 
@@ -30,6 +30,7 @@ CPP_FLAGS          ?=
 ASM_FLAGS          ?=
 CC_FLAGS           ?=
 OBJDIR             ?= obj
+OUTDIR             ?= out
 OBJECT_FILES       ?=
 DEBUG_FORMAT       ?= dwarf-2
 DEBUG_LEVEL        ?= 2
@@ -45,6 +46,7 @@ $(call ERROR_IF_EMPTY, OPTIMIZATION)
 $(call ERROR_IF_EMPTY, C_STANDARD)
 $(call ERROR_IF_EMPTY, CPP_STANDARD)
 $(call ERROR_IF_EMPTY, OBJDIR)
+$(call ERROR_IF_EMPTY, OUTDIR)
 $(call ERROR_IF_EMPTY, DEBUG_FORMAT)
 $(call ERROR_IF_EMPTY, DEBUG_LEVEL)
 $(call ERROR_IF_NONBOOL, LINKER_RELAXATIONS)
@@ -102,6 +104,10 @@ ifneq ($(OBJDIR),.)
    VPATH           += $(dir $(SRC))
 endif
 
+ifneq ($(OUTDIR),.)
+    $(shell mkdir -p $(OUTDIR) 2> /dev/null)
+endif
+
 # Create a list of dependency files from the list of object files
 DEPENDENCY_FILES := $(OBJECT_FILES:%.o=%.d)
 
@@ -135,7 +141,7 @@ BASE_CPP_FLAGS := -x c++ -O$(OPTIMIZATION) -std=$(CPP_STANDARD)
 BASE_ASM_FLAGS := -x assembler-with-cpp
 
 # Create a list of flags to pass to the linker
-BASE_LD_FLAGS := -lm -Wl,-Map=$(TARGET).map,--cref -Wl,--gc-sections
+BASE_LD_FLAGS := -lm -Wl,-Map=$(OUTDIR)/$(TARGET).map,--cref -Wl,--gc-sections
 ifeq ($(LINKER_RELAXATIONS), Y)
    BASE_LD_FLAGS += -Wl,--relax
 endif
@@ -163,7 +169,7 @@ build_end:
 	@echo $(MSG_INFO_MESSAGE) Finished building project \"$(TARGET)\".
 
 # Prints size information of a compiled application (FLASH, RAM and EEPROM usages)
-size: $(TARGET).elf
+size: $(OUTDIR)/$(TARGET).elf
 	@echo $(MSG_SIZE_CMD) Determining size of \"$<\"
 	@echo ""
 	$(CROSS)-size $(SIZE_MCU_FLAG) $(SIZE_FORMAT_FLAG) $<
@@ -183,18 +189,26 @@ mostlyclean:
 # Cleans all build files, leaving only the original source code
 clean: mostlyclean
 	@echo $(MSG_REMOVE_CMD) Removing output files of \"$(TARGET)\"
-	rm -f $(TARGET).elf $(TARGET).hex $(TARGET).bin $(TARGET).eep $(TARGET).map $(TARGET).lss $(TARGET).sym lib$(TARGET).a
+	rm -f \
+        $(OUTDIR)/$(TARGET).elf \
+        $(OUTDIR)/$(TARGET).hex \
+        $(OUTDIR)/$(TARGET).bin \
+        $(OUTDIR)/$(TARGET).eep \
+        $(OUTDIR)/$(TARGET).map \
+        $(OUTDIR)/$(TARGET).lss \
+        $(OUTDIR)/$(TARGET).sym \
+        $(OUTDIR)/lib$(TARGET).a
 
 # Performs a complete build of the user application and prints size information afterwards
 all: build_begin elf hex bin lss sym size build_end
 
 # Helper targets, to build a specific type of output file without having to know the project target name
-lib: lib$(TARGET).a
-elf: $(TARGET).elf
-hex: $(TARGET).hex $(TARGET).eep
-bin: $(TARGET).bin
-lss: $(TARGET).lss
-sym: $(TARGET).sym
+lib: $(OUTDIR)/lib$(TARGET).a
+elf: $(OUTDIR)/$(TARGET).elf
+hex: $(OUTDIR)/$(TARGET).hex $(OUTDIR)/$(TARGET).eep
+bin: $(OUTDIR)/$(TARGET).bin
+lss: $(OUTDIR)/$(TARGET).lss
+sym: $(OUTDIR)/$(TARGET).sym
 
 # Default target to *create* the user application's specified source files; if this rule is executed by
 # make, the input source file doesn't exist and an error needs to be presented to the user
@@ -228,41 +242,41 @@ $(OBJDIR)/%.o: %.S $(MAKEFILE_LIST)
 
 # Generates a library archive file from the user application, which can be linked into other applications
 .PRECIOUS  : $(OBJECT_FILES)
-.SECONDARY : %.a
-%.a: $(OBJECT_FILES)
+.SECONDARY : $(OUTDIR)/%.a
+$(OUTDIR)%.a: $(OBJECT_FILES)
 	@echo $(MSG_ARCHIVE_CMD) Archiving object files into \"$@\"
 	$(CROSS)-ar rcs $@ $(OBJECT_FILES)
 
 # Generates an ELF debug file from the user application, which can be further processed for FLASH and EEPROM data
 # files, or used for programming and debugging directly
 .PRECIOUS  : $(OBJECT_FILES)
-.SECONDARY : %.elf
-%.elf: $(OBJECT_FILES)
+.SECONDARY : $(OUTDIR)/%.elf
+$(OUTDIR)/%.elf: $(OBJECT_FILES)
 	@echo $(MSG_LINK_CMD) Linking object files into \"$@\"
 	$(CROSS)-gcc $^ -o $@ $(BASE_LD_FLAGS) $(LD_FLAGS)
 
 # Extracts out the loadable FLASH memory data from the project ELF file, and creates an Intel HEX format file of it
-%.hex: %.elf
+$(OUTDIR)/%.hex: $(OUTDIR)/%.elf
 	@echo $(MSG_OBJCPY_CMD) Extracting HEX file data from \"$<\"
 	$(CROSS)-objcopy -O ihex -R .eeprom -R .fuse -R .lock -R .signature $< $@
 
 # Extracts out the loadable FLASH memory data from the project ELF file, and creates an Binary format file of it
-%.bin: %.elf
+$(OUTDIR)/%.bin: $(OUTDIR)/%.elf
 	@echo $(MSG_OBJCPY_CMD) Extracting BIN file data from \"$<\"
 	$(CROSS)-objcopy -O binary -R .eeprom -R .fuse -R .lock -R .signature $< $@
 
 # Extracts out the loadable EEPROM memory data from the project ELF file, and creates an Intel HEX format file of it
-%.eep: %.elf
+$(OUTDIR)/%.eep: $(OUTDIR)/%.elf
 	@echo $(MSG_OBJCPY_CMD) Extracting EEP file data from \"$<\"
 	$(CROSS)-objcopy -O ihex -j .eeprom --set-section-flags=.eeprom="alloc,load" --change-section-lma .eeprom=0 --no-change-warnings $< $@ || exit 0
 
 # Creates an assembly listing file from an input project ELF file, containing interleaved assembly and source data
-%.lss: %.elf
+$(OUTDIR)/%.lss: $(OUTDIR)/%.elf
 	@echo $(MSG_OBJDMP_CMD) Extracting LSS file data from \"$<\"
 	$(CROSS)-objdump -h -d -S -z $< > $@
 
 # Creates a symbol file listing the loadable and discarded symbols from an input project ELF file
-%.sym: %.elf
+$(OUTDIR)/%.sym: $(OUTDIR)/%.elf
 	@echo $(MSG_NM_CMD) Extracting SYM file data from \"$<\"
 	$(CROSS)-nm -n $< > $@
 
