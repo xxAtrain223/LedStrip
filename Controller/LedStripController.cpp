@@ -39,20 +39,19 @@ PyInt::Interpreter interp;
 
 bool CalculateColors = true;
 
-/** Main program entry point. This routine contains the overall program flow, including initial
- *  setup of all components and the main program loop.
- */
-
+// Turn on the debug LED pin
 void debugLedOn()
 {
     PORTD = 0x08;
 }
 
+// Turn off the debug LED pin
 void debugLedOff()
 {
     PORTD = 0x00;
 }
 
+// Toggle the debug LED pin
 void debugLedToggle()
 {
     if (PORTD == 0x08)
@@ -61,6 +60,9 @@ void debugLedToggle()
         PORTD = 0x08;
 }
 
+/** Main program entry point. This routine contains the overall program flow, including initial
+ *  setup of all components and the main program loop.
+ */
 int main(void)
 {
     SetupHardware();
@@ -72,6 +74,7 @@ int main(void)
     DDRD = 0x08;  //Set Port D Pin 3 to output
     PORTD = 0x00; //Set Port D Pin 0-7 to low
 
+    // Create default LED colors
     for (uint8_t i = 0; i < NUM_LEDS; i++)
     {
         leds[i].r = NUM_LEDS - i;
@@ -79,20 +82,25 @@ int main(void)
         leds[i].b = i;
     }
 
-    //Display the leds
+    // Display the leds
     ws2812_setleds(leds, NUM_LEDS);
     ws2812_setleds(leds, NUM_LEDS);
 
     attachCommandCallbacks();
 
+    // Register functions with the interpreter
     interp.Sin = sin8;
     interp.Cos = cos8;
 
+    // Setup initial conditions
     interp.Time = 0;
     interp.Index = 0;
 
+    // If the EEPROM is not ready (valid), reset it
     if (!isEepromReady())
         resetEeprom();
+
+    // Load the latest pattern into the interpreter
     getPattern(getCurrentPattern());
 
     while (true)
@@ -101,6 +109,7 @@ int main(void)
 
         if (CalculateColors)
         {
+            // Loop through the LEDs and generate RGB values for each LED
             for (uint8_t i = 0; i < NUM_LEDS; i++)
             {
                 interp.Index = i;
@@ -110,8 +119,10 @@ int main(void)
                 leds[i].b = interp.execute(PyInt::b);
             }
             
+            // Increment and wrap the interpreter time
             interp.Time = (interp.Time + 1) % 256;
 
+            // 'Render' the LEDs
             ws2812_setleds(leds, NUM_LEDS);
         }
 

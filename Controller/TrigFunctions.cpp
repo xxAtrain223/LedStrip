@@ -1,5 +1,7 @@
 #include "TrigFunctions.h"
 
+// From https://github.com/FastLED/FastLED/blob/master/lib8tion/trig8.h
+
 const uint8_t b_m16_interleave[] = { 0, 49, 49, 41, 90, 27, 117, 10 };
 
 uint8_t sin8(uint8_t theta)

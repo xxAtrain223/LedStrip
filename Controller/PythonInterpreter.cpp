@@ -41,7 +41,7 @@ namespace PyInt
         }
 
         uint8_t rv = 0;
-        for (uint8_t i = 0; i < INSTRUCTION_ARRAY_SIZE && r_instructions[i-1].code != Opcode::RETURN_VALUE; i++)
+        for (uint8_t i = 0; i < INSTRUCTION_ARRAY_SIZE && instructions[i-1].code != Opcode::RETURN_VALUE; i++)
             rv = (this->*operations[instructions[i].code])(instructions[i].arg);
         return rv;
     }

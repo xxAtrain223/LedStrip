@@ -1,8 +1,9 @@
 #include "LedStripController.h"
 #include "PythonInterpreter.h"
 #include "EepromInteractors.h"
-#include "EEPROM.h"
+#include "Arduino/EEPROM.h"
 
+// Enum for CmdMessenger Commands
 enum {
     kAcknowledge,
     kError,
@@ -30,6 +31,7 @@ enum {
     kJumpToDfu
 };
 
+// Function that gets called for an unknown command
 void unknownCommand()
 {
     cmdMessenger.sendCmdStart((uint8_t)kError);
@@ -38,14 +40,26 @@ void unknownCommand()
     cmdMessenger.sendCmdEnd();
 }
 
+/**
+    Commands should generally follow this form:
+    bool requested_ack = cmdMessenger.readBinArg<bool>();
+
+    // Do work
+    // Errors need to be sent before acknowledgement
+
+    if (requested_ack)
+        cmdMessenger.sendBinCmd((uint8_t)kAcknowledge, (uint8_t)CmdId);
+
+    // Send response
+ */
+
+// Receive a ping, send a pong, and blink the debug LED three times
 void cmdPing()
 {
     bool requested_ack = cmdMessenger.readBinArg<bool>();
 
     if (requested_ack)
         cmdMessenger.sendBinCmd((uint8_t)kAcknowledge, (uint8_t)kPing);
-
-    cmdMessenger.sendBinCmd((uint8_t)kPingResult, (uint8_t)kPong);
 
     for (int i = 0; i < 3; i++)
     {
@@ -54,8 +68,11 @@ void cmdPing()
         PORTD = 0x00;
         delay(50);
     }
+
+    cmdMessenger.sendBinCmd((uint8_t)kPingResult, (uint8_t)kPong);
 }
 
+// Pause calculating colors from the patterns
 void cmdPauseCalculations()
 {
     bool requested_ack = cmdMessenger.readBinArg<bool>();
@@ -66,6 +83,7 @@ void cmdPauseCalculations()
         cmdMessenger.sendBinCmd((uint8_t)kAcknowledge, (uint8_t)kPauseCalculations);
 }
 
+// Resume Calculating colors from the patterns
 void cmdResumeCalculations()
 {
     bool requested_ack = cmdMessenger.readBinArg<bool>();
@@ -76,55 +94,67 @@ void cmdResumeCalculations()
         cmdMessenger.sendBinCmd((uint8_t)kAcknowledge, (uint8_t)kResumeCalculations);
 }
 
+// Moved uploading pattern logic into seperate function
 void uploadPattern(PyInt::InstructionSet set)
 {
-    //uint8_t opcode = 0, arg = 0;
     PyInt::Instruction* instructions = NULL;
 
-    if (set == PyInt::InstructionSet::r)
+    // Select the instruction set to read the pattern into
+    switch(set)
+    {
+    case PyInt::InstructionSet::r:
         instructions = (PyInt::Instruction*)interp.r_instructions;
-    else if (set == PyInt::g)
+        break;
+    case PyInt::InstructionSet::g:
         instructions = (PyInt::Instruction*)interp.g_instructions;
-    else if (set == PyInt::b)
+        break;
+    case PyInt::InstructionSet::b:
         instructions = (PyInt::Instruction*)interp.b_instructions;
+        break;
+    }
 
-    for (uint8_t i = 0; i < INSTRUCTION_ARRAY_SIZE && (i == 0 || instructions[i-1].code != PyInt::RETURN_VALUE); i++)
+    // Read bytes until RETURN_VALUE
+    for (uint8_t i = 0; i < INSTRUCTION_ARRAY_SIZE && (i == 0 || instructions[i-1].code != PyInt::Opcode::RETURN_VALUE); i++)
     {
         instructions[i].code = cmdMessenger.readBinArg<uint8_t>();
         instructions[i].arg = cmdMessenger.readBinArg<uint8_t>();
     }
 }
 
+// Calls uploadPattern with Red
 void cmdUploadRedPattern()
 {
     bool requested_ack = cmdMessenger.readBinArg<bool>();
 
-    uploadPattern(PyInt::r);
+    uploadPattern(PyInt::InstructionSet::r);
 
     if (requested_ack)
         cmdMessenger.sendBinCmd((uint8_t)kAcknowledge, (uint8_t)kUploadRedPattern);
 }
 
+// Calls uploadPattern with Green
 void cmdUploadGreenPattern()
 {
     bool requested_ack = cmdMessenger.readBinArg<bool>();
 
-    uploadPattern(PyInt::g);
+    uploadPattern(PyInt::InstructionSet::g);
 
     if (requested_ack)
         cmdMessenger.sendBinCmd((uint8_t)kAcknowledge, (uint8_t)kUploadGreenPattern);
 }
 
+// Calls uploadPattern with Blue
 void cmdUploadBluePattern()
 {
     bool requested_ack = cmdMessenger.readBinArg<bool>();
 
-    uploadPattern(PyInt::b);
+    uploadPattern(PyInt::InstructionSet::b);
 
     if (requested_ack)
         cmdMessenger.sendBinCmd((uint8_t)kAcknowledge, (uint8_t)kUploadBluePattern);
 }
 
+// Saves the current pattern to EEPROM
 void cmdSavePattern()
 {
     bool requested_ack = cmdMessenger.readBinArg<bool>();
@@ -136,6 +166,7 @@ void cmdSavePattern()
         cmdMessenger.sendBinCmd((uint8_t)kAcknowledge, (uint8_t)kSavePattern);
 }
 
+// Load the pattern from EEPROM into the current pattern
 void cmdLoadPattern()
 {
     bool requested_ack = cmdMessenger.readBinArg<bool>();
@@ -147,15 +178,14 @@ void cmdLoadPattern()
         cmdMessenger.sendBinCmd((uint8_t)kAcknowledge, (uint8_t)kLoadPattern);
 }
 
+// Get the pixel at the LED index
 void cmdGetPixel()
 {
     bool requested_ack = cmdMessenger.readBinArg<bool>();
 
     uint8_t index = cmdMessenger.readBinArg<uint8_t>();
 
-    if (requested_ack)
-        cmdMessenger.sendBinCmd((uint8_t)kAcknowledge, (uint8_t)kGetPixel);
-
+    // Check for valid index
     if (index >= 0 && index < NUM_LEDS)
     {
         cmdMessenger.sendCmdStart((uint8_t)kGetPixelResult);
@@ -169,13 +199,19 @@ void cmdGetPixel()
         cmdMessenger.sendBinCmd((uint8_t)kError, (uint8_t)kSetPixel);
         return;
     }
+
+    if (requested_ack)
+        cmdMessenger.sendBinCmd((uint8_t)kAcknowledge, (uint8_t)kGetPixel);
 }
 
+// Set the pixel at the LED index
 void cmdSetPixel()
 {
     bool requested_ack = cmdMessenger.readBinArg<bool>();
 
     uint8_t index = cmdMessenger.readBinArg<uint8_t>();
+
+    // Check for valid index
     if (index >= 0 && index < NUM_LEDS)
     {
         leds[index].r = cmdMessenger.readBinArg<uint8_t>();
@@ -193,6 +229,7 @@ void cmdSetPixel()
         cmdMessenger.sendBinCmd((uint8_t)kAcknowledge, (uint8_t)kSetPixel);
 }
 
+// Fill the strip with the same color
 void cmdFillSolid()
 {
     bool requested_ack = cmdMessenger.readBinArg<bool>();
@@ -214,6 +251,7 @@ void cmdFillSolid()
         cmdMessenger.sendBinCmd((uint8_t)kAcknowledge, (uint8_t)kFillSolid);
 }
 
+// Zero out the EEPROM
 void cmdClearEeprom()
 {
     bool requested_ack = cmdMessenger.readBinArg<bool>();
@@ -224,6 +262,7 @@ void cmdClearEeprom()
         cmdMessenger.sendBinCmd((uint8_t)kAcknowledge, (uint8_t)kClearEeprom);
 }
 
+// Check if the data in EEPROM is valid
 void cmdIsEepromReady()
 {
     bool requested_ack = cmdMessenger.readBinArg<bool>();
@@ -234,6 +273,7 @@ void cmdIsEepromReady()
     cmdMessenger.sendBinCmd((uint8_t)kIsEepromReadyResult, isEepromReady());
 }
 
+// Reset the EEPROM
 void cmdResetEeprom()
 {
     bool requested_ack = cmdMessenger.readBinArg<bool>();
@@ -244,6 +284,7 @@ void cmdResetEeprom()
         cmdMessenger.sendBinCmd((uint8_t)kAcknowledge, (uint8_t)kResetEeprom);
 }
 
+// Return the EEPROM
 void cmdReturnEeprom()
 {
     bool requested_ack = cmdMessenger.readBinArg<bool>();
@@ -255,16 +296,15 @@ void cmdReturnEeprom()
     for (uint16_t i = 0; i < EEPROM.length(); i++)
         cmdMessenger.sendCmdBinArg((uint8_t)EEPROM[i]);
     cmdMessenger.sendCmdEnd();
-
 }
 
+// Jump into the DFU mode
 void cmdJumpToDfu()
 {
     bool requested_ack = cmdMessenger.readBinArg<bool>();
 
     if (requested_ack)
         cmdMessenger.sendBinCmd((uint8_t)kAcknowledge, (uint8_t)kJumpToDfu);
-
 
     TIMSK0 = 0;
     TCCR0B = 0;
@@ -274,6 +314,7 @@ void cmdJumpToDfu()
     while(true) {}
 }
 
+// Attach the command callbacks
 void attachCommandCallbacks()
 {
     cmdMessenger.attach(unknownCommand);

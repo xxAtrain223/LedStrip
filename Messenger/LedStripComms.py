@@ -149,7 +149,11 @@ class LedStripMessenger(object):
             rv = []
 
             for i in dis.Bytecode(bytecode):
+                opname = i.opname
                 argval = i.argval
+
+                if opname == "BINARY_TRUE_DIVIDE":
+                    opname = "BINARY_FLOOR_DIVIDE"
 
                 if type(argval) is str:
                     if argval == "time":
@@ -163,13 +167,13 @@ class LedStripMessenger(object):
                 elif argval is None:
                     argval = 0
                 else:
-                    argval = int(argval)    
+                    argval = int(argval)
 
-                print("{}\t\t{}".format(i.opname, i.argval))
-                if not (i.opname in PythonOpcode.__members__):
-                    raise Exception("{} is not supported".format(i.opname))
+                # print("{}\t\t{}".format(opname, argval))
+                if not (opname in PythonOpcode.__members__):
+                    raise Exception("{} is not supported".format(opname))
 
-                rv.append(PythonOpcode[i.opname].value - 1)
+                rv.append(PythonOpcode[opname].value - 1)
                 rv.append(argval)
 
             if len(rv) > 32:
@@ -265,7 +269,7 @@ if __name__ == "__main__":
 
         sleep(1.0)
         
-        op = 5
+        op = 12
         if op == 0:
             comm.isEepromReady()
             comm.clearEeprom()
@@ -386,3 +390,10 @@ if __name__ == "__main__":
         elif op == 11:
             for i in range(10):
                 print(comm.getPixel(i))
+
+        elif op == 12:
+            comm.uploadPattern(
+                "sin(time * 10 - index * 10) / 4",
+                "0",
+                "sin(time * 10 + index * 10) / 4"
+            )
