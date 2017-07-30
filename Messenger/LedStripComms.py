@@ -74,8 +74,8 @@ class LedStripMessenger(object):
         self.close()
 
     def send(self, request_ack, has_response, command, *args, arg_formats=None):
-        logger.info("Sending {0:s}".format(command))
         with DelayedKeyboardInterrupt():
+            logger.info("Sending {0:s}".format(command))
             self.messenger.send(command, *(request_ack, *args), arg_formats=arg_formats)
             if request_ack:
                 acknowledgement = self.messenger.receive()
