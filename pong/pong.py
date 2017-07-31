@@ -2,117 +2,90 @@ import sys
 import collections
 import copy
 import time
+from rgba import RGBA
 
 sys.path.append("..")
 from Messenger.LedStripComms import LedStripMessenger
 
-def clamp(n, smallest, largest):
-    return max(smallest, min(n, largest))
+class Pong(object):
+    def __init__(self, comms):
+        self.comms = comms
 
-class rgba(object):
-    def __init__(self, r, g=None, b=None, a=255):
-        self.r = int(clamp(r, 0, 255))
-        if g != None and b != None:
-            self.g = int(clamp(g, 0, 255))
-            self.b = int(clamp(b, 0, 255))
-        else:
-            self.g = self.r
-            self.b = self.r
-        self.a = int(clamp(a, 0, 255))
+        self.NUM_LEDS = 120
+        INITIAL_SCORE = 5
+        self.MAX_SCORE = 10
 
-    def rf(self):
-        return self.r / 255.0
+        self.R_MAX = 127
+        self.G_MAX = 63
+        self.B_MAX = 31
 
-    def gf(self):
-        return self.g / 255.0
+        self.onstrip = [None for i in range(self.NUM_LEDS)]
+        self.background = [RGBA(0, 0, 0) for i in range(self.NUM_LEDS)]
+        self.foreground = [RGBA(0, 0, 0, 0) for i in range(self.NUM_LEDS)]
 
-    def bf(self):
-        return self.b / 255.0
+        self.score_a = INITIAL_SCORE
+        self.score_b = INITIAL_SCORE
 
-    def af(self):
-        return self.a / 255.0
+        self.ball_pos = self.NUM_LEDS // 2
+        self.ball_dir = 1
 
-    def rp(self):
-        return int(self.rf() * self.af() * 255)
+    def fillSolid(self, pixel):
+        self.comms.fillSolid(pixel.rp(), pixel.gp(), pixel.bp())
+        self.onstrip = [pixel] * self.NUM_LEDS
 
-    def gp(self):
-        return int(self.gf() * self.af() * 255)
+    def setPixel(self, i, pixel):
+        #print("result: {}".format(pixel))
+        if self.onstrip[i] != pixel:
+            self.onstrip[i] = copy.deepcopy(pixel)
+            self.comms.setPixel(i, pixel.rp(), pixel.gp(), pixel.bp())
 
-    def bp(self):
-        return int(self.bf() * self.af() * 255)
+    def setup(self):
+        self.comms.ping()
+        self.comms.pauseCalculations()
 
-    def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            return self.__dict__ == other.__dict__
-        return False
+        self.fillSolid(RGBA(0))
 
-    def __ne__(self, other):
-        return not self.__eq__(other)
+        self.draw_zone_a()
+        self.draw_zone_b()
 
-    def __repr__(self):
-        return "rgba(r={}, g={}, b={}, a={})".format(self.r, self.g, self.b, self.a)
 
-    def __add__(self, other):
-        if not isinstance(other, self.__class__):
-            raise TypeError("Unsupported operand type(s) for +: '{}' and '{}'".format(self.__class__, type(other)))
+    def draw_zone_a(self):
+        for i in range(0, self.score_a):
+            r = int((self.score_a - 1 - i) / self.score_a * self.R_MAX)
+            g = int(                    i  / self.score_a * self.G_MAX)
+            self.background[i] = RGBA(r, g, 0)
 
-        a = other.af() + self.af() * (1 - other.af())
-        r = (other.rf() * other.af() + self.rf() * self.af() * (1 - other.af())) / a
-        g = (other.gf() * other.af() + self.gf() * self.af() * (1 - other.af())) / a
-        b = (other.bf() * other.af() + self.bf() * self.af() * (1 - other.af())) / a
+        self.background[self.MAX_SCORE] = RGBA(255, 0, 255)
 
-        return rgba(r * 255, g * 255, b * 255, a * 255)
+    def draw_zone_b(self):
+        #for i in range(self.NUM_LEDS - 1, self.NUM_LEDS - self.score_b - 1, -1):
+        for i in range(0, self.score_b):
+            r = int((self.score_b - 1 - i) / self.score_b * self.R_MAX)
+            g = int(                    i  / self.score_b * self.G_MAX)
+            self.background[self.NUM_LEDS - 1 - i] = RGBA(r, g, 0)
 
-with LedStripMessenger("/dev/LedStripController") as comms:
-    comms.ping()
-    comms.pauseCalculations()
+        self.background[self.NUM_LEDS - 1 - self.MAX_SCORE] = RGBA(0, 255, 255)
 
-    NUM_LEDS = 120
-    r_max = 127
-    g_max = 63
-    b_max = 31
+    def update(self):
+        self.foreground[self.ball_pos] = RGBA(0, a=0)
+        self.ball_pos = self.ball_pos + self.ball_dir
+        if self.ball_pos < 0:
+            self.ball_pos = 0
+            self.ball_dir = 1
+        elif self.ball_pos >= self.NUM_LEDS:
+            self.ball_pos = self.NUM_LEDS - 1
+            self.ball_dir = -1
+        self.foreground[self.ball_pos] = RGBA(255, a=255)
 
-    def setPixel(i, pixel):
-        #print(i, onstrip[i], pixel, onstrip[i] != pixel)
-        if onstrip[i] != pixel:
-            onstrip[i] = copy.deepcopy(pixel)
-            comms.setPixel(i, pixel.rp(), pixel.gp(), pixel.bp())
+    def draw(self):
+        for i in range(self.NUM_LEDS):
+            #print("background: {}, foreground: {}".format(self.background[i], self.foreground[i]))
+            self.setPixel(i, self.background[i] + self.foreground[i])
 
-    def fillSolid(pixel):
-        comms.fillSolid(pixel.rp(), pixel.gp(), pixel.bp())
-        onstrip = [pixel] * NUM_LEDS
 
-    background = [rgba(0, 0, 0) for i in range(NUM_LEDS)]
-    foreground = [rgba(0, 0, 0, 0) for i in range(NUM_LEDS)]
-    onstrip = copy.deepcopy(background)
-
-    fillSolid(rgba(0))
-
-    size = 10
-    for i in range(0, size):
-        background[i].r = int((size - 1 - i) / size * r_max)
-        background[i].g = int(            i  / size * g_max)
-        
-        background[-i-1].r = int((size - 1 - i) / size * r_max)
-        background[-i-1].g = int(            i  / size * g_max)
-
-    background[20].r = 255
-    background[20].b = 255
-    background[-21].g = 255
-    background[-21].b = 255
-
-    i = NUM_LEDS // 2
-    dir = 1
+with LedStripMessenger("COM3") as comms:
+    p = Pong(comms)
+    p.setup()
     while True:
-        foreground[i] = rgba(0, a=0)
-        i = i + dir
-        if i < 0:
-            i = 0
-            dir = 1
-        elif i >= NUM_LEDS:
-            i = NUM_LEDS - 1
-            dir = -1
-        foreground[i] = rgba(255, a=255)
-
-        for index in range(NUM_LEDS):
-            setPixel(index, background[index] + foreground[index])
+        p.update()
+        p.draw()
