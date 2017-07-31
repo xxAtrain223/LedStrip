@@ -34,7 +34,6 @@ class Pong(object):
         self.onstrip = [pixel] * self.NUM_LEDS
 
     def setPixel(self, i, pixel):
-        #print("result: {}".format(pixel))
         if self.onstrip[i] != pixel:
             self.onstrip[i] = copy.deepcopy(pixel)
             self.comms.setPixel(i, pixel.rp(), pixel.gp(), pixel.bp())
@@ -58,7 +57,6 @@ class Pong(object):
         self.background[self.MAX_SCORE] = RGBA(255, 0, 255)
 
     def draw_zone_b(self):
-        #for i in range(self.NUM_LEDS - 1, self.NUM_LEDS - self.score_b - 1, -1):
         for i in range(0, self.score_b):
             r = int((self.score_b - 1 - i) / self.score_b * self.R_MAX)
             g = int(                    i  / self.score_b * self.G_MAX)
@@ -79,13 +77,12 @@ class Pong(object):
 
     def draw(self):
         for i in range(self.NUM_LEDS):
-            #print("background: {}, foreground: {}".format(self.background[i], self.foreground[i]))
             self.setPixel(i, self.background[i] + self.foreground[i])
 
-
-with LedStripMessenger("COM3") as comms:
-    p = Pong(comms)
-    p.setup()
-    while True:
-        p.update()
-        p.draw()
+if __name__ == "__main__":
+    with LedStripMessenger("/dev/LedStripController") as comms:
+        p = Pong(comms)
+        p.setup()
+        while True:
+            p.update()
+            p.draw()
