@@ -393,7 +393,7 @@ if __name__ == "__main__":
 
         elif op == 12:
             comm.uploadPattern(
-                "sin(time * 10 - index * 10) / 4",
+                "sin(time * 10 - index * 10) / 1",
                 "0",
-                "sin(time * 10 + index * 10) / 4"
+                "sin(time * 10 + index * 10) / 1"
             )
