@@ -2,6 +2,7 @@ import sys
 import collections
 import copy
 import time
+import random
 from rgba import RGBA
 
 sys.path.append("..")
@@ -27,7 +28,9 @@ class Pong(object):
         self.score_b = INITIAL_SCORE
 
         self.ball_pos = self.NUM_LEDS // 2
-        self.ball_dir = 1
+        self.ball_pos = 115
+        self.ball_spd = random.randrange(-1, 3, 2) * INITIAL_SCORE
+        self.ball_spd = 0
 
     def fillSolid(self, pixel):
         self.comms.fillSolid(pixel.rp(), pixel.gp(), pixel.bp())
@@ -47,7 +50,6 @@ class Pong(object):
         self.draw_zone_a()
         self.draw_zone_b()
 
-
     def draw_zone_a(self):
         for i in range(0, self.score_a):
             r = int((self.score_a - 1 - i) / self.score_a * self.R_MAX)
@@ -64,16 +66,37 @@ class Pong(object):
 
         self.background[self.NUM_LEDS - 1 - self.MAX_SCORE] = RGBA(0, 255, 255)
 
+    def hit_zone_a(self):
+        if self.ball_pos < self.score_a:
+            self.ball_spd = self.score_a - self.ball_pos
+            print("'A' hit with a speed of {}".format(self.ball_spd))
+
+    def hit_zone_b(self):
+        if self.ball_pos >= self.NUM_LEDS - self.score_b:
+            self.ball_spd = self.NUM_LEDS - 1 - self.ball_pos - self.score_b
+            print("'B' hit with a speed of {}".format(self.ball_spd))
+
     def update(self):
         self.foreground[self.ball_pos] = RGBA(0, a=0)
-        self.ball_pos = self.ball_pos + self.ball_dir
+        if self.ball_spd > 0:
+            self.ball_pos += 1
+        elif self.ball_spd < 0:
+            self.ball_pos -= 1
+
         if self.ball_pos < 0:
-            self.ball_pos = 0
-            self.ball_dir = 1
+            self.score_a += 1
+            self.draw_zone_a()
+            self.ball_pos = 10
+            self.ball_spd = -1
         elif self.ball_pos >= self.NUM_LEDS:
-            self.ball_pos = self.NUM_LEDS - 1
-            self.ball_dir = -1
+            self.score_b += 1
+            self.draw_zone_b()
+            self.ball_pos = 10
+            self.ball_spd = -1
+
         self.foreground[self.ball_pos] = RGBA(255, a=255)
+
+        time.sleep(0.01 * (self.MAX_SCORE - abs(self.ball_spd)))
 
     def draw(self):
         for i in range(self.NUM_LEDS):

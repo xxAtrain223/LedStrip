@@ -18,6 +18,15 @@ clock = pygame.time.Clock()
 prev_keys = pygame.key.get_pressed()
 curr_keys = pygame.key.get_pressed()
 
+def isKeyPressed(key):
+    return curr_keys[key]
+
+def wasKeyPressed(key):
+    return curr_keys[key] and not prev_keys[key]
+
+def wasKeyReleased(key):
+    return not curr_keys[key] and prev_keys[key]
+
 NUM_LEDS = 120
 LED_SIZE = (screen_size[0] // NUM_LEDS, screen_size[1])
 
@@ -33,6 +42,16 @@ while True:
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit(0)
+
+    prev_keys = curr_keys
+    curr_keys = pygame.key.get_pressed()
+
+    if isKeyPressed(pygame.K_ESCAPE):
+        pygame.quit()
+        sys.exit(0)
+    if wasKeyPressed(pygame.K_SPACE):
+        vpong.hit_zone_a()
+        vpong.hit_zone_b()
 
     vpong.update()
     vpong.draw()
