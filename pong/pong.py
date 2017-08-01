@@ -8,10 +8,10 @@ sys.path.append("..")
 from Messenger.LedStripComms import LedStripMessenger
 
 class Pong(object):
-    def __init__(self, comms):
+    def __init__(self, comms, num_leds):
         self.comms = comms
 
-        self.NUM_LEDS = 120
+        self.NUM_LEDS = num_leds
         INITIAL_SCORE = 5
         self.MAX_SCORE = 10
 

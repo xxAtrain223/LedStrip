@@ -55,3 +55,5 @@ class RGBA(object):
 
         return RGBA(r * 255, g * 255, b * 255, a * 255)
 
+    def toTuple(self):
+        return (self.rp(), self.gp(), self.bp())
